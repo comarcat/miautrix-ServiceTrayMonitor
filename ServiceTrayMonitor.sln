@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11723.231
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceTrayMonitor", "ServiceTrayMonitor.csproj", "{212AF0A0-F6EC-BF6F-6D1A-D9A3B3FA3196}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupSTM", "Setup\SetupSTM\SetupSTM.vdproj", "{4355FA38-B8E6-7F50-6F01-4B7D94DB58BC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{212AF0A0-F6EC-BF6F-6D1A-D9A3B3FA3196}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{212AF0A0-F6EC-BF6F-6D1A-D9A3B3FA3196}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{212AF0A0-F6EC-BF6F-6D1A-D9A3B3FA3196}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{212AF0A0-F6EC-BF6F-6D1A-D9A3B3FA3196}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4355FA38-B8E6-7F50-6F01-4B7D94DB58BC}.Debug|Any CPU.ActiveCfg = Debug
+		{4355FA38-B8E6-7F50-6F01-4B7D94DB58BC}.Release|Any CPU.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {73923BAF-E1A6-4040-9342-35AC232DE4FA}
+	EndGlobalSection
+EndGlobal
