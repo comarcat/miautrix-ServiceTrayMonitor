@@ -1,3 +1,6 @@
+using System.ServiceProcess;
+using ServiceTrayMonitor.Models;
+
 namespace ServiceTrayMonitor.Services
 {
     /// <summary>
@@ -32,6 +35,9 @@ namespace ServiceTrayMonitor.Services
             return icon;
         }
 
+        /// <summary>
+        /// Cached per color and shared by every menu build — callers must not dispose it.
+        /// </summary>
         public static Bitmap GetMenuDot(Color color)
         {
             int key = color.ToArgb();
@@ -52,22 +58,19 @@ namespace ServiceTrayMonitor.Services
 
         /// <summary>
         /// Combines all monitored statuses into one summary color for the tray icon:
-        /// red if anything's stopped that shouldn't be, amber if pending, else green.
+        /// red if anything is stopped or missing, amber if anything is pending or paused, else green.
         /// </summary>
-        public static Color SummaryColor(IEnumerable<Models.MonitoredService> services)
+        public static Color SummaryColor(IEnumerable<MonitoredService> services)
         {
             var list = services.ToList();
-            if (list.Count == 0) return Color.Gray;
+            if (list.Count == 0) return StatusPalette.Unknown;
 
-            if (list.Any(s => !s.Exists)) return Color.FromArgb(231, 76, 60);
-            if (list.Any(s => s.Status == System.ServiceProcess.ServiceControllerStatus.Stopped))
-                return Color.FromArgb(231, 76, 60);
-            if (list.Any(s => s.StatusText.Contains("Pending")))
-                return Color.FromArgb(241, 196, 15);
-            if (list.Any(s => s.Status == System.ServiceProcess.ServiceControllerStatus.Paused))
-                return Color.FromArgb(241, 196, 15);
+            if (list.Any(s => !s.Exists || s.Status == ServiceControllerStatus.Stopped))
+                return StatusPalette.Stopped;
+            if (list.Any(s => StatusPalette.IsPending(s.Status) || s.Status == ServiceControllerStatus.Paused))
+                return StatusPalette.Paused;
 
-            return Color.FromArgb(46, 204, 113);
+            return StatusPalette.Running;
         }
     }
 }

@@ -1,27 +1,27 @@
 {
   "Forms/CredentialsForm.cs": {
-    "mtime": 1784151355.7481844,
-    "seen": 1789315267.9783297,
-    "ast_hash": "170eb1fd448b1d4a23ea02f9d50d1b89",
-    "semantic_hash": "170eb1fd448b1d4a23ea02f9d50d1b89"
+    "mtime": 1789316490.448964,
+    "seen": 1789328857.782269,
+    "ast_hash": "3d2188358a28a5a5722799f25b4b0311",
+    "semantic_hash": "3d2188358a28a5a5722799f25b4b0311"
   },
   "Forms/ManageServicesForm.cs": {
-    "mtime": 1784151355.7446537,
-    "seen": 1789315267.978334,
-    "ast_hash": "779e677781c856675da903198295d5cf",
-    "semantic_hash": "779e677781c856675da903198295d5cf"
+    "mtime": 1789316440.7120495,
+    "seen": 1789328857.7822742,
+    "ast_hash": "984473ce74a8bcbbce09119ff9e61bb0",
+    "semantic_hash": "984473ce74a8bcbbce09119ff9e61bb0"
   },
   "Forms/SettingsForm.cs": {
-    "mtime": 1784151355.75233,
-    "seen": 1789315267.978336,
-    "ast_hash": "dbfb158c55898d0058f9fcda4d95da0f",
-    "semantic_hash": "dbfb158c55898d0058f9fcda4d95da0f"
+    "mtime": 1789316463.2551873,
+    "seen": 1789328857.7822766,
+    "ast_hash": "6c454d66fb7b414c27a305649ee947da",
+    "semantic_hash": "6c454d66fb7b414c27a305649ee947da"
   },
   "Models/MonitoredService.cs": {
-    "mtime": 1784151355.7408683,
-    "seen": 1789315267.9783373,
-    "ast_hash": "9cc7fdfe7ccf8a57ac602dd8ce4320d6",
-    "semantic_hash": "9cc7fdfe7ccf8a57ac602dd8ce4320d6"
+    "mtime": 1789316262.8949704,
+    "seen": 1789328857.7822778,
+    "ast_hash": "483f0b810d91d50d49798b509f927c93",
+    "semantic_hash": "483f0b810d91d50d49798b509f927c93"
   },
   "Models/StoredCredential.cs": {
     "mtime": 1784151355.737326,
@@ -36,51 +36,177 @@
     "semantic_hash": "92831988b73f967883c0e72f59fdc496"
   },
   "ServiceTrayMonitor.csproj": {
-    "mtime": 1784165825.437509,
-    "seen": 1789315267.9783406,
-    "ast_hash": "14c07d8b03d85aadec5fbdadf921d025",
-    "semantic_hash": "14c07d8b03d85aadec5fbdadf921d025"
+    "mtime": 1789316505.5184364,
+    "seen": 1789328857.7822876,
+    "ast_hash": "c2eb3b1791d57d562a2640ad251756e7",
+    "semantic_hash": "c2eb3b1791d57d562a2640ad251756e7"
   },
   "ServiceTrayMonitor.sln": {
-    "mtime": 1784165393.4634476,
-    "seen": 1789315267.9783413,
-    "ast_hash": "c5d9c1d181cc25f13f42ba8ea202b548",
-    "semantic_hash": "c5d9c1d181cc25f13f42ba8ea202b548"
+    "mtime": 1789316604.5283666,
+    "seen": 1789328857.7822886,
+    "ast_hash": "bdb55eca91656f2f988bf9a70f9d8b12",
+    "semantic_hash": "bdb55eca91656f2f988bf9a70f9d8b12"
   },
   "Services/ConfigManager.cs": {
-    "mtime": 1784151355.764792,
-    "seen": 1789315267.9783423,
-    "ast_hash": "c7eae98d0a2f9623dc2bf133c4801d8a",
-    "semantic_hash": "c7eae98d0a2f9623dc2bf133c4801d8a"
+    "mtime": 1789316294.021147,
+    "seen": 1789328857.7822902,
+    "ast_hash": "402c999fd44e310ebc6ad98994acb303",
+    "semantic_hash": "402c999fd44e310ebc6ad98994acb303"
   },
   "Services/ElevatedServiceRunner.cs": {
-    "mtime": 1784151355.7582073,
-    "seen": 1789315267.9783437,
-    "ast_hash": "c4719b42d3d9cc95c97c78a2031889c9",
-    "semantic_hash": "c4719b42d3d9cc95c97c78a2031889c9"
+    "mtime": 1789316343.0703351,
+    "seen": 1789328857.7822912,
+    "ast_hash": "bbd6a07084225878973f3d6e18b359e1",
+    "semantic_hash": "bbd6a07084225878973f3d6e18b359e1"
   },
   "Services/IconFactory.cs": {
-    "mtime": 1784151355.7615116,
-    "seen": 1789315267.9783447,
-    "ast_hash": "5d83afe47bad7bffe5f44748c62bdca9",
-    "semantic_hash": "5d83afe47bad7bffe5f44748c62bdca9"
+    "mtime": 1789316370.6948266,
+    "seen": 1789328857.7822924,
+    "ast_hash": "1422f09e6110e131f7bd7196ed41cb8b",
+    "semantic_hash": "1422f09e6110e131f7bd7196ed41cb8b"
   },
   "Services/ServiceMonitorEngine.cs": {
-    "mtime": 1784151355.7548428,
-    "seen": 1789315267.9783456,
-    "ast_hash": "df5f807ec3c610b19ff41cc4f48ef119",
-    "semantic_hash": "df5f807ec3c610b19ff41cc4f48ef119"
+    "mtime": 1789316360.6452596,
+    "seen": 1789328857.782295,
+    "ast_hash": "187b87277daba92eeaf8227ee094921e",
+    "semantic_hash": "187b87277daba92eeaf8227ee094921e"
   },
   "TrayAppContext.cs": {
-    "mtime": 1784151355.7271805,
-    "seen": 1789315267.9783468,
-    "ast_hash": "4689afe8f80b6884bb5f618543bef290",
-    "semantic_hash": "4689afe8f80b6884bb5f618543bef290"
+    "mtime": 1789316404.768688,
+    "seen": 1789328857.7823026,
+    "ast_hash": "0e322a3b3d16f0a4ad9223ac53a12fcd",
+    "semantic_hash": "0e322a3b3d16f0a4ad9223ac53a12fcd"
   },
   "README.md": {
-    "mtime": 1784151355.730528,
-    "seen": 1789315267.9783478,
-    "ast_hash": "ee114a80ab8812898b0e6cfd0bb58d83",
-    "semantic_hash": "ee114a80ab8812898b0e6cfd0bb58d83"
+    "mtime": 1789316619.449521,
+    "seen": 1789328857.782304,
+    "ast_hash": "a7247b5f681989e22d090a6f5d321080",
+    "semantic_hash": "a7247b5f681989e22d090a6f5d321080"
+  },
+  "Models/ServiceSelection.cs": {
+    "mtime": 1789316270.7610216,
+    "seen": 1789328857.7822795,
+    "ast_hash": "37024a31835fb39838b10172d946c46c",
+    "semantic_hash": "37024a31835fb39838b10172d946c46c"
+  },
+  "Models/StatusPalette.cs": {
+    "mtime": 1789316260.3487697,
+    "seen": 1789328857.7822807,
+    "ast_hash": "a2d8e130a876749bbf9c1d9048f24b7b",
+    "semantic_hash": "a2d8e130a876749bbf9c1d9048f24b7b"
+  },
+  "Services/ServiceActions.cs": {
+    "mtime": 1789316325.772392,
+    "seen": 1789328857.7822938,
+    "ast_hash": "0a3596d4d7c678f6e3c5c799c1127204",
+    "semantic_hash": "0a3596d4d7c678f6e3c5c799c1127204"
+  },
+  "Services/StartupManager.cs": {
+    "mtime": 1789316313.5784845,
+    "seen": 1789328857.7822962,
+    "ast_hash": "11578f6ac1a9d898b89d6733a9d623f5",
+    "semantic_hash": "11578f6ac1a9d898b89d6733a9d623f5"
+  },
+  "Tests/ServiceTrayMonitor.Tests/ConfigManagerTests.cs": {
+    "mtime": 1789316553.3444197,
+    "seen": 1789328857.7822971,
+    "ast_hash": "85a1edd2a224cb5bf48419d5ed516a43",
+    "semantic_hash": "85a1edd2a224cb5bf48419d5ed516a43"
+  },
+  "Tests/ServiceTrayMonitor.Tests/ServiceSelectionTests.cs": {
+    "mtime": 1789316537.148164,
+    "seen": 1789328857.782298,
+    "ast_hash": "54929fe46a33b400c0e6022cf90c6aa7",
+    "semantic_hash": "54929fe46a33b400c0e6022cf90c6aa7"
+  },
+  "Tests/ServiceTrayMonitor.Tests/ServiceTrayMonitor.Tests.csproj": {
+    "mtime": 1789316603.8812811,
+    "seen": 1789328857.782299,
+    "ast_hash": "052c555c0a4f75995d1fefc57859718d",
+    "semantic_hash": "052c555c0a4f75995d1fefc57859718d"
+  },
+  "Tests/ServiceTrayMonitor.Tests/ServicesTests.cs": {
+    "mtime": 1789316573.7818694,
+    "seen": 1789328857.7823002,
+    "ast_hash": "9401b75c6b5826de20206434a25930d9",
+    "semantic_hash": "9401b75c6b5826de20206434a25930d9"
+  },
+  "Tests/ServiceTrayMonitor.Tests/StatusAndRulesTests.cs": {
+    "mtime": 1789316528.4075294,
+    "seen": 1789328857.7823014,
+    "ast_hash": "96bb7e6c2a1d3bee2eda1893980acd07",
+    "semantic_hash": "96bb7e6c2a1d3bee2eda1893980acd07"
+  },
+  "docs/project/01-project-charter.md": {
+    "mtime": 1789316801.1245503,
+    "seen": 1789328857.782305,
+    "ast_hash": "8e7094cb3b662841fa498a020399eeac",
+    "semantic_hash": "8e7094cb3b662841fa498a020399eeac"
+  },
+  "docs/project/02-statement-of-work.md": {
+    "mtime": 1789317133.5729775,
+    "seen": 1789328857.782306,
+    "ast_hash": "33bf1d91b60507cacae8ed6c899d918e",
+    "semantic_hash": "33bf1d91b60507cacae8ed6c899d918e"
+  },
+  "docs/project/03-wbs.md": {
+    "mtime": 1789328341.4488995,
+    "seen": 1789328857.7823071,
+    "ast_hash": "d25346e1d3f4dc5d462414665ba9de8f",
+    "semantic_hash": "d25346e1d3f4dc5d462414665ba9de8f"
+  },
+  "docs/project/04-software-description.md": {
+    "mtime": 1789316887.7566504,
+    "seen": 1789328857.782308,
+    "ast_hash": "1dbd09d230dfbbc3b799fee146bf8624",
+    "semantic_hash": "1dbd09d230dfbbc3b799fee146bf8624"
+  },
+  "docs/project/05-defect-log.md": {
+    "mtime": 1789317132.0613852,
+    "seen": 1789328857.782309,
+    "ast_hash": "1c9efeffb2a9176470500ff6e76cd898",
+    "semantic_hash": "1c9efeffb2a9176470500ff6e76cd898"
+  },
+  "docs/project/06-test-plan-and-report.md": {
+    "mtime": 1789317107.179489,
+    "seen": 1789328857.7823098,
+    "ast_hash": "e8c175355dec566c4ac681a3e2160b69",
+    "semantic_hash": "e8c175355dec566c4ac681a3e2160b69"
+  },
+  "docs/project/07-change-request-log.md": {
+    "mtime": 1789316962.755983,
+    "seen": 1789328857.782311,
+    "ast_hash": "d2be00c23a7e1eb3c1c1ed5de25db6f7",
+    "semantic_hash": "d2be00c23a7e1eb3c1c1ed5de25db6f7"
+  },
+  "docs/project/08-risk-register.md": {
+    "mtime": 1789316981.6864452,
+    "seen": 1789328857.782312,
+    "ast_hash": "be47ad935cc66b9007b3fffebd502b6f",
+    "semantic_hash": "be47ad935cc66b9007b3fffebd502b6f"
+  },
+  "docs/project/09-decision-log.md": {
+    "mtime": 1789328345.5824597,
+    "seen": 1789328857.7823129,
+    "ast_hash": "c47990e0d7580de15e2504b697583fcf",
+    "semantic_hash": "c47990e0d7580de15e2504b697583fcf"
+  },
+  "docs/project/10-configuration-baseline.md": {
+    "mtime": 1789317267.937012,
+    "seen": 1789328857.782314,
+    "ast_hash": "f57b6b93091fd05ba9f6ed36ed45fbf3",
+    "semantic_hash": "f57b6b93091fd05ba9f6ed36ed45fbf3"
+  },
+  "docs/project/11-lessons-learned.md": {
+    "mtime": 1789317015.5904303,
+    "seen": 1789328857.782315,
+    "ast_hash": "e44d29ce062339e7139e18cee2ff312d",
+    "semantic_hash": "e44d29ce062339e7139e18cee2ff312d"
+  },
+  "docs/project/README.md": {
+    "mtime": 1789328348.395831,
+    "seen": 1789328857.7823157,
+    "ast_hash": "0ed97744df575e78ebdb609e377137e3",
+    "semantic_hash": "0ed97744df575e78ebdb609e377137e3"
   }
 }

@@ -14,11 +14,12 @@ pause, and resume them — all from the tray icon's right-click menu.
   service installed on the machine
 - Main window: sortable grid with color-coded status column and action buttons
 - Configurable poll interval
-- Optional "start with Windows" toggle
-- Optional admin credential (Domain/Username/Password) so service actions can run
-  under a specific account instead of requiring the interactive user to be an admin.
-  Stored inside the same `config.json`, with the password DPAPI-encrypted — never
-  written to disk in plain text, and only decryptable by the same Windows user account.
+- Optional "start with Windows" toggle — registers a per-user Task Scheduler task
+  (`ServiceTrayMonitor (<user>)`) that starts the app at logon with admin rights
+- Optional admin credential (Domain/Username/Password). Service actions run with the
+  app's own admin rights first; if Windows denies access, the action is retried as the
+  saved account. Stored inside the same `config.json`, with the password DPAPI-encrypted —
+  never written to disk in plain text, and only decryptable by the same Windows user account.
 - Settings persisted to `%AppData%\ServiceTrayMonitor\config.json`
 
 ## Requirements
@@ -55,23 +56,37 @@ pause, and resume them — all from the tray icon's right-click menu.
    live color-coded status and Start/Stop/Pause/Resume options.
 5. Double-click the tray icon (or choose **Open Service Monitor**) any time
    for the full grid view.
-6. If the account you're logged in as isn't an admin, right-click the tray
-   icon → **Admin Credentials...** and enter a Windows account (Domain optional,
-   blank = local account) that has permission to control services. Use **Test**
-   to confirm it works before saving. From then on, Start/Stop/Pause/Resume run
-   under that account instead of your own.
+6. If Windows refuses an action to your own admin rights (for example, a service
+   whose permissions only allow a specific account), right-click the tray icon →
+   **Admin Credentials...** and enter a Windows account (Domain optional, blank =
+   local account) that has permission to control services. Use **Test** to confirm
+   it works before saving. From then on, any action Windows denies to the app is
+   retried under that account. To change the domain or username later, re-enter the
+   password; leaving it blank with the same login keeps the saved password.
+
+## Running the tests
+
+```
+dotnet test Tests/ServiceTrayMonitor.Tests
+```
+
+The tests use a temporary config folder and only *read* service status — they never
+start, stop, or reconfigure a service.
 
 ## Troubleshooting: "Access is denied" with a saved credential
 
-If a saved credential is correct (Test succeeds) but Start/Stop/Pause still fail
-with `Access is denied`, the account's admin token got filtered by UAC — a known
-Windows behavior when a process is launched with explicit alternate credentials,
-even for accounts in the Administrators group. Two fixes:
+The saved account is signed in with a *batch* logon, which Windows doesn't filter
+through UAC, so an Administrators-group account keeps its full admin token. **Test**
+tells you which token it got:
 
-**Use the built-in "Administrator" account** — it isn't subject to UAC filtering.
-Enable it from an elevated prompt if needed: `net user administrator /active:yes`
+- *"Credential works … full administrator token"* — the account can control services.
+- *"Signed in … but without a full administrator token"* — the account isn't an admin,
+  or it lacks the **Log on as a batch job** right (then an interactive logon is used,
+  which UAC filters). Either grant that right (Local Security Policy → User Rights
+  Assignment), use the built-in "Administrator" account, or grant the account explicit
+  rights on just the services it needs, as below.
 
-**Or grant your account explicit rights on just that service**, so it never needs
+**Grant your account explicit rights on just that service**, so it never needs
 to be an admin at all (recommended — least privilege):
 
 ```powershell
@@ -90,8 +105,8 @@ Repeat step 3 for each service. Run all of this from an elevated prompt, once.
 
 ## Notes on customization
 
-- Colors are defined in `Models/MonitoredService.cs` (`StatusColor`) — tweak
-  the RGB values there if you want a different palette.
+- Colors are defined in `Models/StatusPalette.cs` — tweak the RGB values there
+  if you want a different palette; menu dots, grid, and tray icon all follow it.
 - Poll interval and monitored service list live in `ConfigManager`/`AppSettings`;
   the config file is plain JSON if you ever want to edit it by hand.
 - Icons are drawn at runtime (`Services/IconFactory.cs`) — no external image

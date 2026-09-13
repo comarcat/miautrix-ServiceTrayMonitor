@@ -5,7 +5,8 @@ namespace ServiceTrayMonitor.Forms
 {
     /// <summary>
     /// Lets the user choose which installed Windows services to monitor,
-    /// plus a couple of general options. Saves back to config.json on Save.
+    /// plus a couple of general options. Raises SettingsSaved on Save; the tray
+    /// context persists the result.
     /// </summary>
     public class SettingsForm : Form
     {
@@ -13,21 +14,20 @@ namespace ServiceTrayMonitor.Forms
         private readonly TextBox _searchBox;
         private readonly NumericUpDown _intervalUpDown;
         private readonly CheckBox _startWithWindowsBox;
-        private readonly AppSettings _settings;
-        private List<System.ServiceProcess.ServiceController> _allServices = new();
+        private List<InstalledService> _allServices = new();
+        private ServiceSelection _selection = new(Array.Empty<string>());
+        private bool _populating;
 
         public event Action<AppSettings>? SettingsSaved;
 
-        public SettingsForm(AppSettings currentSettings)
+        public SettingsForm()
         {
-            _settings = currentSettings;
-
             Text = "Manage Monitored Services";
             Width = 520;
             Height = 560;
             StartPosition = FormStartPosition.CenterScreen;
             MinimumSize = new Size(420, 420);
-            Icon = IconFactory.GetTrayIcon(Color.FromArgb(52, 152, 219));
+            Icon = IconFactory.GetTrayIcon(StatusPalette.Pending);
 
             var topLabel = new Label
             {
@@ -54,6 +54,17 @@ namespace ServiceTrayMonitor.Forms
                 CheckOnClick = true,
                 IntegralHeight = false
             };
+            _list.Format += (_, e) =>
+            {
+                if (e.ListItem is InstalledService svc)
+                    e.Value = svc.Label;
+            };
+            // Record every check/uncheck in the selection, which outlives the filtered list.
+            _list.ItemCheck += (_, e) =>
+            {
+                if (!_populating && _list.Items[e.Index] is InstalledService svc)
+                    _selection.Set(svc.ServiceName, e.NewValue == CheckState.Checked);
+            };
 
             var optionsPanel = new FlowLayoutPanel
             {
@@ -66,14 +77,13 @@ namespace ServiceTrayMonitor.Forms
 
             var intervalPanel = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
             intervalPanel.Controls.Add(new Label { Text = "Poll interval (seconds):", AutoSize = true, Padding = new Padding(0, 6, 6, 0) });
-            _intervalUpDown = new NumericUpDown { Minimum = 2, Maximum = 300, Value = Math.Max(2, currentSettings.PollIntervalSeconds) };
+            _intervalUpDown = new NumericUpDown { Minimum = 2, Maximum = 300, Value = 5 };
             intervalPanel.Controls.Add(_intervalUpDown);
 
             _startWithWindowsBox = new CheckBox
             {
                 Text = "Start automatically when Windows starts",
-                AutoSize = true,
-                Checked = currentSettings.StartWithWindows
+                AutoSize = true
             };
 
             optionsPanel.Controls.Add(intervalPanel);
@@ -86,10 +96,10 @@ namespace ServiceTrayMonitor.Forms
                 Padding = new Padding(8),
                 FlowDirection = FlowDirection.RightToLeft
             };
-            var saveBtn = new Button { Text = "Save", Width = 100, Height = 32, DialogResult = DialogResult.OK };
+            var saveBtn = new Button { Text = "Save", Width = 100, Height = 32 };
             var cancelBtn = new Button { Text = "Cancel", Width = 100, Height = 32 };
             saveBtn.Click += (_, _) => SaveAndClose();
-            cancelBtn.Click += (_, _) => Close();
+            cancelBtn.Click += (_, _) => Hide();
             buttonPanel.Controls.Add(saveBtn);
             buttonPanel.Controls.Add(cancelBtn);
 
@@ -107,68 +117,79 @@ namespace ServiceTrayMonitor.Forms
                     Hide();
                 }
             };
+        }
 
-            Load += (_, _) => LoadServices();
+        /// <summary>
+        /// Resets the window to the given saved settings and reloads the installed services.
+        /// Called each time the window is opened.
+        /// </summary>
+        public void LoadFrom(AppSettings settings)
+        {
+            _selection = new ServiceSelection(settings.MonitoredServiceNames);
+            _intervalUpDown.Value = Math.Clamp(settings.PollIntervalSeconds, (int)_intervalUpDown.Minimum, (int)_intervalUpDown.Maximum);
+            _startWithWindowsBox.Checked = settings.StartWithWindows;
+            LoadServices();
+
+            _populating = true;
+            _searchBox.Text = string.Empty; // TextChanged repopulates when the filter had text
+            _populating = false;
+            PopulateList(string.Empty);
         }
 
         private void LoadServices()
         {
-            Cursor = Cursors.WaitCursor;
+            UseWaitCursor = true;
             try
             {
                 _allServices = ServiceMonitorEngine.GetAllServices();
-                PopulateList(string.Empty);
             }
             catch (Exception ex)
             {
+                _allServices = new List<InstalledService>();
                 MessageBox.Show(this, $"Couldn't load the list of Windows services:\n{ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
-                Cursor = Cursors.Default;
+                UseWaitCursor = false;
             }
         }
 
         private void PopulateList(string filter)
         {
-            _list.Items.Clear();
-            var monitored = new HashSet<string>(_settings.MonitoredServiceNames, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var svc in _allServices)
+            _populating = true;
+            _list.BeginUpdate();
+            try
             {
-                string label = $"{svc.DisplayName}  ({svc.ServiceName})";
-                if (!string.IsNullOrWhiteSpace(filter) &&
-                    label.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)
-                    continue;
+                _list.Items.Clear();
+                foreach (var svc in _allServices)
+                {
+                    if (!ServiceSelection.MatchesFilter(svc, filter))
+                        continue;
 
-                int idx = _list.Items.Add(svc);
-                if (monitored.Contains(svc.ServiceName))
-                    _list.SetItemChecked(idx, true);
+                    int idx = _list.Items.Add(svc);
+                    if (_selection.IsChecked(svc.ServiceName))
+                        _list.SetItemChecked(idx, true);
+                }
             }
-
-            _list.DisplayMember = "DisplayName";
-            _list.Format += (_, e) =>
+            finally
             {
-                if (e.ListItem is System.ServiceProcess.ServiceController sc)
-                    e.Value = $"{sc.DisplayName}  ({sc.ServiceName})";
-            };
+                _list.EndUpdate();
+                _populating = false;
+            }
         }
 
         private void SaveAndClose()
         {
-            var chosen = new List<string>();
-            foreach (var item in _list.CheckedItems)
+            var updated = new AppSettings
             {
-                if (item is System.ServiceProcess.ServiceController sc)
-                    chosen.Add(sc.ServiceName);
-            }
+                // From the selection, not the visible list: services hidden by the filter stay monitored.
+                MonitoredServiceNames = _selection.ToOrderedList(_allServices.Select(s => s.ServiceName)),
+                PollIntervalSeconds = (int)_intervalUpDown.Value,
+                StartWithWindows = _startWithWindowsBox.Checked
+            };
 
-            _settings.MonitoredServiceNames = chosen;
-            _settings.PollIntervalSeconds = (int)_intervalUpDown.Value;
-            _settings.StartWithWindows = _startWithWindowsBox.Checked;
-
-            SettingsSaved?.Invoke(_settings);
+            SettingsSaved?.Invoke(updated);
             Hide();
         }
     }

@@ -81,11 +81,6 @@
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
-                    {
-                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
-                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
                     "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.NetCore.DesktopRuntime.8.0.x64"
                     {
                     "Name" = "8:.NET Desktop Runtime 8.0.29 (x64)"
@@ -262,15 +257,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:SystemTrayMonitor"
-        "ProductCode" = "8:{30A64D21-28C3-469B-AF3E-AB24DAAB1925}"
-        "PackageCode" = "8:{88BF7F9B-B8FF-4EDE-B190-FD06CB77F18D}"
+        "ProductCode" = "8:{6E2B7C41-3F9D-4A8E-B5C2-9D17E4A30F58}"
+        "PackageCode" = "8:{C4A91F37-82DE-4B6A-9E05-3B7F2D6C8A14}"
         "UpgradeCode" = "8:{1B549785-373D-417D-A58F-C1CE513727F4}"
         "AspNetVersion" = "8:"
         "RestartWWWService" = "11:FALSE"
-        "RemovePreviousVersions" = "11:FALSE"
+        "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.1"
         "Manufacturer" = "8:Miautrix"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"

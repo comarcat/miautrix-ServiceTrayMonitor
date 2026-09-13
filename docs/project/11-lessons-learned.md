@@ -1,0 +1,12 @@
+# 11 — Lessons Learned Register
+
+| ID | Date | Phase | Situation | Lesson / recommendation | Applies to |
+|---|---|---|---|---|---|
+| LL-01 | 2026-09-13 | Design | The credential feature was designed for non-admin users while the manifest forces elevation. With a credential saved, actions got a UAC-filtered token and failed (DEF-005). | Test security-sensitive features in the exact elevation scenario they target, with a real second account, before release. | Any feature touching elevation or credentials |
+| LL-02 | 2026-09-13 | Construction | Redirected child-process output that was never read deadlocked the app (DEF-004). | When redirecting process output, drain stdout and stderr concurrently and apply timeouts. Prefer in-process APIs over shelling out. | All process launches (e.g. `StartupManager`) |
+| LL-03 | 2026-09-13 | Construction | Two windows saved different parts of the same config file from different in-memory copies, and one overwrote the other (DEF-001). | Give persisted state a single owner that re-reads and merges on save; never share mutable settings objects across windows. | Config and any shared state |
+| LL-04 | 2026-09-13 | Construction | The UI synchronization context was captured before WinForms installed it (DEF-015). | In an `ApplicationContext` constructor, install `WindowsFormsSynchronizationContext` explicitly before capturing it. | Tray/background-thread UI updates |
+| LL-05 | 2026-09-13 | Release | v1.0.0 installer settings prevent in-place upgrades (DEF-013). | Decide versioning and upgrade policy (UpgradeCode, RemovePreviousVersions) at the first release. | Installer |
+| LL-06 | 2026-09-13 | Project control | Changes began before a version-control baseline existed. | Commit the as-is state before the first change. Until then, a hashed snapshot is the minimum baseline. | All projects |
+| LL-07 | 2026-09-13 | Analysis | The knowledge graph surfaced duplicated logic (colour palette, action rules) and the most coupled components (`TrayAppContext`, `ServiceMonitorEngine`), which guided where to consolidate. | Build the knowledge base before planning changes and refresh it (`/graphify --update`) after each release. | Feature planning |
+| LL-08 | 2026-09-13 | Quality | 1.0.0 had no automated tests, so regressions were invisible. | Add tests with every fix and CR; keep them non-invasive so they run safely on admin machines. | All changes |

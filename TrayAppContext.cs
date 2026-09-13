@@ -13,29 +13,35 @@ namespace ServiceTrayMonitor
     {
         private readonly NotifyIcon _trayIcon;
         private readonly ContextMenuStrip _menu;
+        private readonly Font _boldMenuFont;
         private readonly ServiceMonitorEngine _engine;
+        private readonly SynchronizationContext _uiContext;
         private AppSettings _settings;
+        private bool _exiting;
 
         private ManageServicesForm? _manageForm;
         private SettingsForm? _settingsForm;
         private CredentialsForm? _credentialsForm;
-        private readonly SynchronizationContext _uiContext;
 
         public TrayAppContext()
         {
-            // Captured here on the UI thread; used later to safely marshal
-            // NotifyIcon updates that arrive from the polling timer's background thread.
-            _uiContext = SynchronizationContext.Current ?? new SynchronizationContext();
+            // No control exists yet, so WinForms hasn't installed its synchronization context on
+            // this thread (Application.Run only does that later). Install it now: status updates
+            // from the polling thread are posted through it and must run on this UI thread.
+            if (SynchronizationContext.Current is not WindowsFormsSynchronizationContext)
+                SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
+            _uiContext = SynchronizationContext.Current!;
 
             _settings = ConfigManager.Load();
             _engine = new ServiceMonitorEngine(_settings.PollIntervalSeconds);
-            _engine.UpdateMonitoredList(_settings.MonitoredServiceNames);
             _engine.StatusesUpdated += OnStatusesUpdated;
+            _engine.UpdateMonitoredList(_settings.MonitoredServiceNames);
 
             _menu = new ContextMenuStrip();
+            _boldMenuFont = new Font(_menu.Font, FontStyle.Bold);
             _trayIcon = new NotifyIcon
             {
-                Icon = IconFactory.GetTrayIcon(Color.Gray),
+                Icon = IconFactory.GetTrayIcon(StatusPalette.Unknown),
                 Visible = true,
                 Text = "Service Tray Monitor",
                 ContextMenuStrip = _menu
@@ -46,6 +52,15 @@ namespace ServiceTrayMonitor
 
             BuildMenu();
             _engine.Start();
+
+            if (ConfigManager.LastLoadWarning is { } warning)
+                ShowBalloon("Settings reset", warning, ToolTipIcon.Warning);
+
+            // Re-register the startup task on launch (e.g. after an upgrade moved the exe).
+            if (_settings.StartWithWindows)
+                ApplyStartupSetting(true);
+            else
+                StartupManager.RemoveLegacyRunEntry();
         }
 
         /// <summary>
@@ -54,9 +69,9 @@ namespace ServiceTrayMonitor
         /// </summary>
         private void BuildMenu()
         {
-            _menu.Items.Clear();
+            ClearMenu();
 
-            _menu.Items.Add(new ToolStripMenuItem("Open Service Monitor", null, (_, _) => OpenManageServices()) { Font = new Font(_menu.Font, FontStyle.Bold) });
+            _menu.Items.Add(new ToolStripMenuItem("Open Service Monitor", null, (_, _) => OpenManageServices()) { Font = _boldMenuFont });
             _menu.Items.Add(new ToolStripSeparator());
 
             if (_engine.CurrentStatuses.Count == 0)
@@ -72,20 +87,10 @@ namespace ServiceTrayMonitor
                         Image = IconFactory.GetMenuDot(svc.StatusColor)
                     };
 
-                    var startItem = new ToolStripMenuItem("Start", null, (_, _) => RunAction(svc.ServiceName, _engine.StartService));
-                    var stopItem = new ToolStripMenuItem("Stop", null, (_, _) => RunAction(svc.ServiceName, _engine.StopService));
-                    var pauseItem = new ToolStripMenuItem("Pause", null, (_, _) => RunAction(svc.ServiceName, _engine.PauseService));
-                    var resumeItem = new ToolStripMenuItem("Resume", null, (_, _) => RunAction(svc.ServiceName, _engine.ResumeService));
-
-                    startItem.Enabled = svc.Exists && svc.Status != System.ServiceProcess.ServiceControllerStatus.Running;
-                    stopItem.Enabled = svc.Exists && svc.Status != System.ServiceProcess.ServiceControllerStatus.Stopped;
-                    pauseItem.Enabled = svc.Exists && svc.CanPauseAndContinue && svc.Status == System.ServiceProcess.ServiceControllerStatus.Running;
-                    resumeItem.Enabled = svc.Exists && svc.Status == System.ServiceProcess.ServiceControllerStatus.Paused;
-
-                    item.DropDownItems.Add(startItem);
-                    item.DropDownItems.Add(stopItem);
-                    item.DropDownItems.Add(pauseItem);
-                    item.DropDownItems.Add(resumeItem);
+                    item.DropDownItems.Add(new ToolStripMenuItem("Start", null, (_, _) => RunAction(svc.ServiceName, _engine.StartService)) { Enabled = ServiceActionRules.CanStart(svc) });
+                    item.DropDownItems.Add(new ToolStripMenuItem("Stop", null, (_, _) => RunAction(svc.ServiceName, _engine.StopService)) { Enabled = ServiceActionRules.CanStop(svc) });
+                    item.DropDownItems.Add(new ToolStripMenuItem("Pause", null, (_, _) => RunAction(svc.ServiceName, _engine.PauseService)) { Enabled = ServiceActionRules.CanPause(svc) });
+                    item.DropDownItems.Add(new ToolStripMenuItem("Resume", null, (_, _) => RunAction(svc.ServiceName, _engine.ResumeService)) { Enabled = ServiceActionRules.CanResume(svc) });
 
                     _menu.Items.Add(item);
                 }
@@ -99,27 +104,70 @@ namespace ServiceTrayMonitor
             _menu.Items.Add(new ToolStripMenuItem("Exit", null, (_, _) => ExitApp()));
         }
 
-        private void RunAction(string serviceName, Func<string, (bool success, string message)> action)
+        /// <summary>
+        /// Items.Clear() doesn't dispose the removed items, so the menu leaked on every open.
+        /// The status-dot images belong to IconFactory's cache — detach them before disposing.
+        /// </summary>
+        private void ClearMenu()
         {
-            var (success, message) = action(serviceName);
-            _trayIcon.BalloonTipTitle = success ? "Success" : "Action failed";
-            _trayIcon.BalloonTipText = $"{serviceName}: {message}";
-            _trayIcon.BalloonTipIcon = success ? ToolTipIcon.Info : ToolTipIcon.Error;
-            _trayIcon.ShowBalloonTip(3000);
+            var items = _menu.Items.Cast<ToolStripItem>().ToList();
+            _menu.Items.Clear();
+            foreach (var item in items)
+                DisposeMenuItem(item);
+        }
+
+        private static void DisposeMenuItem(ToolStripItem item)
+        {
+            if (item is ToolStripMenuItem menuItem)
+            {
+                foreach (var child in menuItem.DropDownItems.Cast<ToolStripItem>().ToList())
+                    DisposeMenuItem(child);
+            }
+
+            item.Image = null;
+            item.Dispose();
+        }
+
+        private async void RunAction(string serviceName, Func<string, (bool success, string message)> action)
+        {
+            (bool success, string message) result;
+            try
+            {
+                // Actions wait for the service to reach its target state — keep that off the UI thread.
+                result = await Task.Run(() => action(serviceName));
+            }
+            catch (Exception ex)
+            {
+                result = (false, ex.Message);
+            }
+
+            if (_exiting) return;
+
+            ShowBalloon(result.success ? "Success" : "Action failed", $"{serviceName}: {result.message}",
+                result.success ? ToolTipIcon.Info : ToolTipIcon.Error);
             _engine.RefreshNow();
+        }
+
+        private void ShowBalloon(string title, string text, ToolTipIcon icon)
+        {
+            _trayIcon.BalloonTipTitle = title;
+            _trayIcon.BalloonTipText = text;
+            _trayIcon.BalloonTipIcon = icon;
+            _trayIcon.ShowBalloonTip(3000);
         }
 
         private void OnStatusesUpdated(List<MonitoredService> statuses)
         {
-            // This fires from the polling timer's background thread — marshal
-            // onto the UI thread before touching the NotifyIcon.
+            // This fires from a thread-pool thread — marshal onto the UI thread before
+            // touching the NotifyIcon.
             _uiContext.Post(_ => ApplyStatusesToTray(statuses), null);
         }
 
         private void ApplyStatusesToTray(List<MonitoredService> statuses)
         {
-            var summary = IconFactory.SummaryColor(statuses);
-            _trayIcon.Icon = IconFactory.GetTrayIcon(summary);
+            if (_exiting) return;
+
+            _trayIcon.Icon = IconFactory.GetTrayIcon(IconFactory.SummaryColor(statuses));
 
             var tooltipLines = statuses.Take(8).Select(s => $"{s.DisplayName}: {s.StatusText}");
             string tooltip = statuses.Count == 0
@@ -129,9 +177,7 @@ namespace ServiceTrayMonitor
             // NotifyIcon.Text has a 127-char limit.
             _trayIcon.Text = tooltip.Length > 127 ? tooltip[..124] + "..." : tooltip;
 
-            // Note: ManageServicesForm subscribes to _engine.StatusesUpdated itself and
-            // marshals back to its UI thread via Invoke — we don't touch its grid here,
-            // since this handler runs on the polling timer's background thread.
+            // ManageServicesForm subscribes to _engine.StatusesUpdated itself and marshals to its own UI thread.
         }
 
         private void OpenManageServices()
@@ -151,9 +197,15 @@ namespace ServiceTrayMonitor
         {
             if (_settingsForm == null || _settingsForm.IsDisposed)
             {
-                _settingsForm = new SettingsForm(_settings);
+                _settingsForm = new SettingsForm();
                 _settingsForm.SettingsSaved += OnSettingsSaved;
             }
+
+            // Reset to the saved settings each time the window opens, so edits from a cancelled
+            // session don't linger — but don't wipe edits in a window that's already open.
+            if (!_settingsForm.Visible)
+                _settingsForm.LoadFrom(_settings);
+
             _settingsForm.Show();
             _settingsForm.Activate();
         }
@@ -170,16 +222,42 @@ namespace ServiceTrayMonitor
 
         private void OnSettingsSaved(AppSettings updated)
         {
-            _settings = updated;
-            ConfigManager.Save(_settings);
+            try
+            {
+                // Merges into the file on disk, so a credential saved since startup is kept.
+                _settings = ConfigManager.SaveGeneralSettings(updated);
+            }
+            catch (Exception ex)
+            {
+                ShowBalloon("Settings not saved", ex.Message, ToolTipIcon.Error);
+                return;
+            }
+
             _engine.SetPollInterval(_settings.PollIntervalSeconds);
             _engine.UpdateMonitoredList(_settings.MonitoredServiceNames);
+            ApplyStartupSetting(_settings.StartWithWindows);
+        }
+
+        private async void ApplyStartupSetting(bool enabled)
+        {
+            var (success, message) = await Task.Run(() => StartupManager.Apply(enabled));
+            if (!success && !_exiting)
+                ShowBalloon("Start with Windows", message, ToolTipIcon.Warning);
         }
 
         private void ExitApp()
         {
-            _trayIcon.Visible = false;
+            _exiting = true;
+            _engine.StatusesUpdated -= OnStatusesUpdated;
             _engine.Dispose();
+
+            _trayIcon.Visible = false;
+            _trayIcon.Dispose();
+
+            _manageForm?.Dispose();
+            _settingsForm?.Dispose();
+            _credentialsForm?.Dispose();
+
             Application.Exit();
         }
     }

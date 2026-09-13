@@ -1,0 +1,18 @@
+# 08 — Risk Register
+
+Scale: Probability (P) and Impact (I) 1 (low) – 5 (high); Score = P × I. Response strategies per PMI:
+avoid, mitigate, transfer, accept, escalate.
+
+| ID | Risk (cause → event → effect) | Category | P | I | Score | Response | Actions | Owner | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| R-01 | The credential fallback (`LogonUser` batch + impersonation) couldn't be exercised with a real alternate admin account during development → it may behave differently on target machines → service actions could still fail when the app's own token is denied | Technical / quality | 3 | 4 | 12 | Mitigate | Run UAT-06 and UAT-07 with (a) a local admin, (b) a domain admin, (c) a non-admin with a per-service ACL. The Test button reports the token type. | Dev team + client tester | Open |
+| R-02 | Operator enters **another** admin's credentials at the UAC prompt → the process runs as that admin → config, DPAPI credential, and startup task belong to that admin → settings appear missing or the credential can't be decrypted | Operational | 2 | 3 | 6 | Mitigate | Document in README/user guide: run the app as the same admin user who configures it. Consider a CR if shared-machine usage is required. | PM | Open |
+| R-03 | Group Policy removes "Log on as a batch job" from the saved account → fallback uses an interactive, UAC-filtered token → *Access is denied* | Environment | 2 | 4 | 8 | Mitigate | Test button flags a non-full token. Grant the right, use the built-in Administrator, or apply per-service ACLs. Infrastructure owner to confirm the policy. | Security / infra owner | Open |
+| R-04 | Policy blocks scheduled-task creation or schtasks is unavailable → Start with Windows fails | Environment | 2 | 2 | 4 | Accept / monitor | Failure is shown as a balloon; covered by UAT-09 | Client tester | Open |
+| R-05 | No GitHub commit of the v1.0.0 baseline before changes → history can't show the original state → harder audit and rollback | Configuration management | 3 | 3 | 9 | Mitigate | Zip snapshot + SHA-256 manifest captured (doc 10). Client commits the baseline from the zip first, then 1.0.1. | Client | Mitigating |
+| R-06 | Hand-edited `.vdproj` codes (ProductCode/PackageCode) or build setup cause upgrade issues → two entries in Apps & Features or blocked install | Release | 2 | 3 | 6 | Mitigate | Build the MSI in Visual Studio and run UAT-11 (upgrade from 1.0.0) on a test machine before release | Dev team / client | Open |
+| R-07 | Unsigned binaries → SmartScreen / "unknown publisher" warnings → user distrust or blocked installs | Security / adoption | 3 | 2 | 6 | Transfer via CR | CR-003 (code signing) | Sponsor | Open |
+| R-08 | The reference server has 1.0.0 with Start with Windows on → first 1.0.1 launch registers a task and deletes the legacy Run value → an unexpected change is noticed by admins | Operational | 4 | 1 | 4 | Accept | Communicate in release notes; expected behaviour (DEF-003 fix) | PM | Open |
+| R-09 | Single reviewer (AI-assisted) analysis → defects missed or misjudged | Quality | 2 | 3 | 6 | Mitigate | Peer review of the 1.0.1 diff in GitHub; UAT; defect log open for new entries | PM | Open |
+| R-10 | Behaviour change: actions now try the app's own token before the saved account (DEC-002) → audit trails show the operator's account instead of the service account | Compliance | 2 | 2 | 4 | Accept / escalate if audit requires | Confirm with the sponsor. If actions must always run as the service account, raise a CR. | Sponsor | Open |
+| R-11 | Feature requests arrive during UAT → scope creep into the fix release | Scope | 3 | 3 | 9 | Avoid | Enforce change control (doc 07); features go to CRs after 1.0.1 acceptance | PM | Open |

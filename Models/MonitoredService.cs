@@ -15,18 +15,9 @@ namespace ServiceTrayMonitor.Models
 
         /// <summary>
         /// Color used in the UI and tray icon to represent this service's current status.
+        /// Palette lives in <see cref="StatusPalette"/>.
         /// </summary>
-        public Color StatusColor => Status switch
-        {
-            ServiceControllerStatus.Running => Color.FromArgb(46, 204, 113),   // green
-            ServiceControllerStatus.Stopped => Color.FromArgb(231, 76, 60),    // red
-            ServiceControllerStatus.Paused => Color.FromArgb(241, 196, 15),    // amber
-            ServiceControllerStatus.StartPending => Color.FromArgb(52, 152, 219),  // blue
-            ServiceControllerStatus.StopPending => Color.FromArgb(52, 152, 219),   // blue
-            ServiceControllerStatus.ContinuePending => Color.FromArgb(52, 152, 219),
-            ServiceControllerStatus.PausePending => Color.FromArgb(52, 152, 219),
-            _ => Color.Gray
-        };
+        public Color StatusColor => StatusPalette.For(Status, Exists);
 
         public string StatusText => Exists ? Status.ToString() : "Not found";
     }

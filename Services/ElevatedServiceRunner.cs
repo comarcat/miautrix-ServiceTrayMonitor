@@ -1,140 +1,123 @@
-using System.Diagnostics;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
+using Microsoft.Win32.SafeHandles;
 using ServiceTrayMonitor.Models;
 
 namespace ServiceTrayMonitor.Services
 {
     /// <summary>
-    /// Executes service control actions (start/stop/pause/continue) under a specific
-    /// Windows account instead of the interactively logged-in user — so the app itself
-    /// doesn't have to run elevated as long as the stored account is an admin (or has
-    /// the right service-control permissions).
+    /// Runs service control actions as the stored admin credential. ServiceMonitorEngine uses it
+    /// when the app's own token is refused ("Access is denied").
     ///
-    /// Implementation note: this shells out to sc.exe rather than using ServiceController
-    /// directly, because ServiceController always acts as the current process's token —
-    /// there's no built-in way to pass explicit credentials to it. Process.Start, on the
-    /// other hand, supports launching as a different user via UserName/Domain/PasswordInClearText.
-    ///
-    /// Caveat: if the stored account has UAC enabled and is not the built-in Administrator,
-    /// Windows may still hand back a filtered (non-admin) token for an interactive-style
-    /// logon. If service actions fail with "Access is denied" even though the credential
-    /// is correct, use a dedicated service account with UAC not applicable to it, or the
-    /// built-in Administrator account.
+    /// Implementation note: the account is signed in with LogonUser and impersonated around a normal
+    /// ServiceController call — no child process, no redirected pipes, no password on a command line.
+    /// A batch logon is requested first: Windows doesn't apply UAC token filtering to batch logons,
+    /// so an administrator account keeps its full token. If the account lacks the "Log on as a batch
+    /// job" right, an interactive logon is used instead, which UAC may filter — the Test button
+    /// reports whether a full administrator token was obtained.
     /// </summary>
     public static class ElevatedServiceRunner
     {
-        public static (bool success, string message) RunAction(string serviceName, string scAction, StoredCredential credential)
-        {
-            if (!credential.IsConfigured)
-                return (false, "No admin credential is configured.");
+        private const int Logon32LogonInteractive = 2;
+        private const int Logon32LogonBatch = 4;
+        private const int Logon32ProviderDefault = 0;
+        private const int ErrorLogonTypeNotGranted = 1385;
+        private const uint ScManagerAllAccess = 0xF003F;
 
-            try
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool LogonUser(string username, string? domain, string password,
+            int logonType, int logonProvider, out SafeAccessTokenHandle token);
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr OpenSCManager(string? machineName, string? databaseName, uint desiredAccess);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool CloseServiceHandle(IntPtr handle);
+
+        public static (bool success, string message) Run(StoredCredential credential, Func<(bool success, string message)> action)
+        {
+            var (token, error) = Logon(credential);
+            if (token == null)
+                return (false, error);
+
+            using (token)
             {
-                var psi = new ProcessStartInfo
+                try
                 {
-                    FileName = "sc.exe",
-                    Arguments = $"{scAction} \"{serviceName}\"",
-                    UserName = credential.Username,
-                    Domain = string.IsNullOrWhiteSpace(credential.Domain) ? Environment.MachineName : credential.Domain,
-                    PasswordInClearText = credential.Password,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    LoadUserProfile = false
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null)
-                    return (false, "Could not start sc.exe.");
-
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit(15000);
-
-                if (process.ExitCode == 0)
-                    return (true, $"{scAction} succeeded.");
-
-                string detail = !string.IsNullOrWhiteSpace(error) ? error : output;
-                if (string.IsNullOrWhiteSpace(detail))
-                    detail = $"sc.exe exited with code {process.ExitCode}.";
-
-                return (false, AppendAccessDeniedHint(detail.Trim()));
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
+                    return WindowsIdentity.RunImpersonated(token, action);
+                }
+                catch (Exception ex) when (ServiceActions.IsAccessDenied(ex))
+                {
+                    return (false,
+                        $"Access is denied for {credential.DisplayLogin} as well. Windows may have given this account " +
+                        "a filtered (non-administrator) token, or the account has no rights on this service. Use Test " +
+                        "under Admin Credentials to check the token, or grant the account rights on the service " +
+                        "(see the README).");
+                }
+                catch (Exception ex)
+                {
+                    return (false, ServiceActions.Describe(ex));
+                }
             }
         }
 
         /// <summary>
-        /// "Access is denied" from sc.exe with a valid credential almost always means the
-        /// account's token got UAC-filtered (non-admin token) even though the account is
-        /// an admin — a known behavior when launching a process with explicit credentials.
-        /// Point the user at the two real fixes instead of leaving a bare error.
-        /// </summary>
-        private static string AppendAccessDeniedHint(string detail)
-        {
-            if (detail.IndexOf("Access is denied", StringComparison.OrdinalIgnoreCase) < 0)
-                return detail;
-
-            return detail +
-                "\n\nThis usually means the account's admin token got filtered by UAC, even though " +
-                "the password is correct. Either use the built-in \"Administrator\" account, or grant " +
-                "this account explicit rights on the service directly (sc sdset) so it doesn't need to " +
-                "be an admin at all — see the README for the exact command.";
-        }
-
-        public static (bool success, string message) Start(string serviceName, StoredCredential credential) =>
-            RunAction(serviceName, "start", credential);
-
-        public static (bool success, string message) Stop(string serviceName, StoredCredential credential) =>
-            RunAction(serviceName, "stop", credential);
-
-        public static (bool success, string message) Pause(string serviceName, StoredCredential credential) =>
-            RunAction(serviceName, "pause", credential);
-
-        public static (bool success, string message) Resume(string serviceName, StoredCredential credential) =>
-            RunAction(serviceName, "continue", credential);
-
-        /// <summary>
-        /// Quick credential check: tries to query the SCM as the given user.
-        /// Returns success/failure so the Credentials form can give immediate feedback.
+        /// Signs the account in and checks that it holds a full administrator token with full access
+        /// to the Service Control Manager. Returns success/failure so the Credentials form can give
+        /// immediate feedback.
         /// </summary>
         public static (bool success, string message) TestCredential(StoredCredential credential)
         {
-            if (!credential.IsConfigured)
-                return (false, "Enter a username first.");
+            var (token, error) = Logon(credential);
+            if (token == null)
+                return (false, error);
 
-            try
+            using (token)
+            using (var identity = new WindowsIdentity(token.DangerousGetHandle()))
             {
-                var psi = new ProcessStartInfo
+                bool adminToken = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+                bool fullScmAccess = WindowsIdentity.RunImpersonated(token, () =>
                 {
-                    FileName = "sc.exe",
-                    Arguments = "query state= all",
-                    UserName = credential.Username,
-                    Domain = string.IsNullOrWhiteSpace(credential.Domain) ? Environment.MachineName : credential.Domain,
-                    PasswordInClearText = credential.Password,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    LoadUserProfile = false
-                };
+                    IntPtr scm = OpenSCManager(null, null, ScManagerAllAccess);
+                    if (scm == IntPtr.Zero)
+                        return false;
+                    CloseServiceHandle(scm);
+                    return true;
+                });
 
-                using var process = Process.Start(psi);
-                if (process == null) return (false, "Could not start sc.exe.");
-
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit(10000);
-
-                return process.ExitCode == 0
-                    ? (true, "Credential works.")
-                    : (false, string.IsNullOrWhiteSpace(error) ? $"Failed (exit code {process.ExitCode})." : error.Trim());
+                return adminToken && fullScmAccess
+                    ? (true, $"Credential works: {credential.DisplayLogin} signed in with a full administrator token.")
+                    : (false, $"Signed in as {credential.DisplayLogin}, but without a full administrator token. " +
+                              "Actions will only work on services this account was granted rights to (see the README).");
             }
-            catch (Exception ex)
+        }
+
+        private static (SafeAccessTokenHandle? token, string error) Logon(StoredCredential credential)
+        {
+            if (!credential.IsConfigured)
+                return (null, "No admin credential is configured.");
+
+            // UPN logins (user@domain) need a null domain; a blank domain means a local account.
+            string? domain = credential.Username.Contains('@') ? null
+                : string.IsNullOrWhiteSpace(credential.Domain) ? "." : credential.Domain;
+
+            if (LogonUser(credential.Username, domain, credential.Password, Logon32LogonBatch, Logon32ProviderDefault, out var batchToken))
+                return (batchToken, string.Empty);
+
+            int error = Marshal.GetLastWin32Error();
+            batchToken.Dispose();
+
+            if (error == ErrorLogonTypeNotGranted)
             {
-                return (false, ex.Message);
+                if (LogonUser(credential.Username, domain, credential.Password, Logon32LogonInteractive, Logon32ProviderDefault, out var interactiveToken))
+                    return (interactiveToken, string.Empty);
+
+                error = Marshal.GetLastWin32Error();
+                interactiveToken.Dispose();
             }
+
+            return (null, $"Sign-in failed for {credential.DisplayLogin}: {new Win32Exception(error).Message}");
         }
     }
 }

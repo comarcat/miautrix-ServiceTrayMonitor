@@ -1,0 +1,12 @@
+# Build output
+bin/
+obj/
+TestResults/
+
+# Visual Studio local state
+.vs/
+
+# graphify: keep graph.html, graph.json, GRAPH_REPORT.md; ignore machine-specific cache and paths
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
