@@ -164,3 +164,76 @@ xUnit 2.9.3, xunit.runner.visualstudio 4.0.0, Microsoft.NET.Test.Sdk 18.10.0.
 - The credential fallback is triggered only by *Access is denied*; other errors are reported as-is.
 - The installer product name differs from the app name (CR-002); binaries are unsigned (CR-003).
 - The tooltip shows at most 8 services (Windows limit of 127 characters).
+
+## 9. Paid edition licensing (branch `paid`, 1.0.1-p, CR-004)
+
+The paid edition runs only with a license key activated against the Miautrix Licensing API
+(`https://licensing-api.miautrix.tech`). Everything in §1–§8 applies unchanged once the license allows the app to run.
+
+### 9.1 Components
+
+| File | Responsibility |
+|---|---|
+| `Licensing/Client/ApiClient.cs`, `HardwareFingerprint.cs`, `Keys.cs`, `LicenseFile.cs` | Vendor activation client package v2, **unmodified**: DTOs and HTTP client for `/api/activate` and `/api/checkin`, WMI hardware fingerprint, embedded RSA public key, license-file signature verification |
+| `Licensing/LicensingApi.cs` | `ILicensingApi` interface plus adapter over the vendor HTTP client (lets tests fake the server) |
+| `Licensing/LicenseManager.cs` | Activation, check-in, result handling, key format and masking, persistence, `DecisionChanged` event |
+| `Licensing/LicenseEvaluator.cs` | Pure decision rules → `NotActivated` / `Licensed` / `Grace` / `Blocked` |
+| `Licensing/LicenseState.cs` | Persisted state model and `LicenseStateStore` (ProgramData, atomic save, corrupt-file backup) |
+| `Forms/ActivationForm.cs` | Key entry: startup gate (closing exits) or activation of a different key |
+| `Forms/LicenseForm.cs` | Tray **License…**: status, masked key, subscription expiry, activation ID, last verified, confirm-by date; **Check now**, **Activate with a different key…** |
+| `Program.cs` | Creates the `LicenseManager` and runs the gate before the tray starts |
+| `TrayAppContext.cs` | **License…** menu item; check-in at launch and when due (5-minute timer); warns and exits when the decision becomes Blocked |
+
+### 9.2 Flows
+
+1. **Startup:** load `license.json` → verify the saved license file → evaluate. If Licensed or Grace, the tray starts
+   and a check-in runs immediately. Otherwise the activation window opens; if a key is saved it first re-checks
+   with the server automatically (an admin may have approved it since). Closing the window exits.
+2. **Activation:** normalise the key (trim, upper-case) → client-side format check (Activate disabled until valid)
+   → read the hardware fingerprint → `POST /api/activate` with the persistent InstallGuid and version `1.0.1-p`
+   → verify the returned license file (RSA-SHA256, PKCS#1 v1.5; key, InstallGuid and signature must match)
+   → save → evaluate.
+3. **Check-in:** every `Policy.CheckIntervalHours` (6 h) while approved; hourly while not confirmed or after a failed
+   attempt. `POST /api/checkin` (or a retried activation if the first one never reached the server). The 5-minute
+   timer also re-evaluates offline, so a 7-day window that runs out while the app is open closes it.
+4. **Different key:** same as activation. On failure the current license stays active.
+
+### 9.3 Decision rules
+
+| Situation | Decision | App behaviour |
+|---|---|---|
+| No key saved | NotActivated | Activation window; closing exits |
+| Approved, verified within 7 days, subscription + grace not ended | Licensed | Runs |
+| Pending review, or activation not yet received by the server, within 7 days of the first attempt | Grace | Runs; balloon shows the deadline; hourly retry |
+| Pending review / unreachable for more than 7 days | Blocked | Warning, app closes; next start re-checks, then activation window |
+| Approved but not verified for more than 7 days | Blocked | Same |
+| Subscription expiry + `SubscriptionGraceDays` passed (checked offline too) | Blocked | Same |
+| Server rejection: revoked, expired, locked, rejected, not found, maximum activations, install mismatch, activation not found | Blocked | Warning with reason, app closes |
+| Saved license file fails signature, or belongs to another key/installation | Blocked | Same |
+| Server error, rate limited, timeout, no network | (unchanged) | Treated as temporary; counts toward the 7-day window |
+
+Only a confirmed approval restarts the 7-day window. Time is measured against the latest clock value seen, so
+moving the clock back doesn't reopen a window.
+
+### 9.4 `%ProgramData%\ServiceTrayMonitor\license.json`
+
+| Field | Meaning |
+|---|---|
+| `InstallGuid` | Generated once per installation; sent on every activation and check-in |
+| `LicenseKey`, `ActivationId` | Current key; activation ID from the server (null until the server was reached) |
+| `LicenseFileBase64` | Latest signed license file (verified at every start) |
+| `CheckIntervalHours`, `SubscriptionGraceDays`, `ReviewDeadlineUtc` | Policy values from the last server response |
+| `GraceStartedUtc` | Start of the 7-day window for an unconfirmed license |
+| `LastVerifiedUtc` | Last server confirmation of an approved license |
+| `LastCheckAttemptUtc`, `LastSeenUtc` | Scheduling; latest clock value seen |
+| `BlockedReason`, `LastResultCode`, `LastMessage` | Server rejection, last outcome, message shown to the user |
+
+### 9.5 Configuration and security notes
+
+- API URL: `https://licensing-api.miautrix.tech`; environment variable `STM_LICENSING_API_URL` overrides it for LAN
+  testing. A different server still can't grant a license, because every file must carry a valid signature.
+- Only the RSA **public** key is embedded; there is no confidential key in the client (package v2).
+- State timestamps are not signed (R-12); the executable isn't signed or obfuscated (R-13); the vendor fingerprint
+  can drift on machines without a readable TPM or with virtual adapters (R-14).
+- New dependency: `System.Management` 8.0.0 (WMI). The installer must ship its Windows implementation
+  (`runtimes\win\lib\net8.0`), otherwise the fingerprint silently falls back to placeholders (checked in doc 10 and UAT-21).

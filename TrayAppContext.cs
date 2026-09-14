@@ -1,4 +1,5 @@
 using ServiceTrayMonitor.Forms;
+using ServiceTrayMonitor.Licensing;
 using ServiceTrayMonitor.Models;
 using ServiceTrayMonitor.Services;
 
@@ -16,15 +17,22 @@ namespace ServiceTrayMonitor
         private readonly Font _boldMenuFont;
         private readonly ServiceMonitorEngine _engine;
         private readonly SynchronizationContext _uiContext;
+        private readonly LicenseManager _licensing;
+        private readonly System.Windows.Forms.Timer _licenseTimer;
         private AppSettings _settings;
         private bool _exiting;
+        private bool _licenseCheckRunning;
+        private bool _licenseBlocked;
 
         private ManageServicesForm? _manageForm;
         private SettingsForm? _settingsForm;
         private CredentialsForm? _credentialsForm;
+        private LicenseForm? _licenseForm;
 
-        public TrayAppContext()
+        public TrayAppContext(LicenseManager licensing)
         {
+            _licensing = licensing;
+
             // No control exists yet, so WinForms hasn't installed its synchronization context on
             // this thread (Application.Run only does that later). Install it now: status updates
             // from the polling thread are posted through it and must run on this UI thread.
@@ -61,6 +69,69 @@ namespace ServiceTrayMonitor
                 ApplyStartupSetting(true);
             else
                 StartupManager.RemoveLegacyRunEntry();
+
+            // Paid edition: confirm the license with the server at launch, then whenever a check is
+            // due. The 5-minute tick also re-evaluates offline, so a 7-day window that runs out while
+            // the app is open closes it.
+            _licensing.DecisionChanged += OnLicenseDecisionChanged;
+            _licenseTimer = new System.Windows.Forms.Timer { Interval = (int)TimeSpan.FromMinutes(5).TotalMilliseconds };
+            _licenseTimer.Tick += (_, _) => RunLicenseCheck(force: false);
+            _licenseTimer.Start();
+
+            if (_licensing.Decision is { Access: LicenseAccess.Grace } grace)
+                ShowBalloon("License not confirmed yet", $"{grace.Summary} Service Tray Monitor can run until {grace.DeadlineUtc?.ToLocalTime():g}.", ToolTipIcon.Warning);
+
+            RunLicenseCheck(force: true);
+        }
+
+        private async void RunLicenseCheck(bool force)
+        {
+            if (_licenseCheckRunning || _licenseBlocked || _exiting)
+                return;
+
+            var decision = _licensing.Evaluate();   // raises OnLicenseDecisionChanged, which closes the app when blocked
+            if (decision.Access is LicenseAccess.Blocked or LicenseAccess.NotActivated)
+                return;
+            if (!force && !_licensing.IsCheckDue())
+                return;
+
+            _licenseCheckRunning = true;
+            try
+            {
+                await _licensing.CheckInAsync();
+            }
+            catch (Exception)
+            {
+                // Server and network failures are handled inside CheckInAsync; anything else waits for the next tick.
+            }
+            finally
+            {
+                _licenseCheckRunning = false;
+            }
+        }
+
+        private void OnLicenseDecisionChanged(LicenseDecision decision)
+        {
+            if (_exiting || _licenseBlocked)
+                return;
+            if (decision.Access is not (LicenseAccess.Blocked or LicenseAccess.NotActivated))
+                return;
+
+            _licenseBlocked = true;
+            _licenseTimer.Stop();
+            MessageBox.Show($"{decision.Summary}\n\nService Tray Monitor will now close. Start it again to activate.",
+                "License", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            ExitApp();
+        }
+
+        private void OpenLicense()
+        {
+            if (_licenseForm == null || _licenseForm.IsDisposed)
+            {
+                _licenseForm = new LicenseForm(_licensing);
+            }
+            _licenseForm.Show();
+            _licenseForm.Activate();
         }
 
         /// <summary>
@@ -99,6 +170,7 @@ namespace ServiceTrayMonitor
             _menu.Items.Add(new ToolStripSeparator());
             _menu.Items.Add(new ToolStripMenuItem("Manage Monitored Services...", null, (_, _) => OpenSettings()));
             _menu.Items.Add(new ToolStripMenuItem("Admin Credentials...", null, (_, _) => OpenCredentials()));
+            _menu.Items.Add(new ToolStripMenuItem("License...", null, (_, _) => OpenLicense()));
             _menu.Items.Add(new ToolStripMenuItem("Refresh Now", null, (_, _) => _engine.RefreshNow()));
             _menu.Items.Add(new ToolStripSeparator());
             _menu.Items.Add(new ToolStripMenuItem("Exit", null, (_, _) => ExitApp()));
@@ -250,6 +322,11 @@ namespace ServiceTrayMonitor
             _exiting = true;
             _engine.StatusesUpdated -= OnStatusesUpdated;
             _engine.Dispose();
+
+            _licenseTimer.Stop();
+            _licenseTimer.Dispose();
+            _licensing.DecisionChanged -= OnLicenseDecisionChanged;
+            _licenseForm?.Dispose();
 
             _trayIcon.Visible = false;
             _trayIcon.Dispose();

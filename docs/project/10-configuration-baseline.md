@@ -152,3 +152,73 @@ The folder `miautrix-ServiceTrayMonitor` is not yet a repository and must not be
 - Stability: fixed thread-marshalling and resource-leak issues.
 
 **Known limitations:** no Restart action (CR-001); installed product name "SystemTrayMonitor" (CR-002); unsigned binaries (CR-003).
+
+## 5. Paid edition 1.0.1-p (branch `paid`, CR-004)
+
+| Item | Value |
+|---|---|
+| Date | 2026-09-13 |
+| Branch | `paid`, created from `release/1.0.1` (commit `e3404a5`); not merged into `main` (DEC-019) |
+| Scope | CR-004 license key activation (doc 07) |
+| Versions | `ServiceTrayMonitor.dll` FileVersion 1.0.1.0, ProductVersion **1.0.1-p** |
+| Build | `dotnet build ServiceTrayMonitor.sln -c Release` → 0 errors, 0 warnings (BV-02) |
+| Automated tests | 66 passed, 0 failed, 0 skipped (doc 06 §4) |
+| Live integration | IT-01 passed against `https://licensing-api.miautrix.tech` (doc 06 §3) |
+| UAT | Not started (UAT-13…UAT-21) |
+| Approval | Pending sponsor sign-off |
+
+### Third-party input
+
+| Item | Value |
+|---|---|
+| Package | `MiautrixLicensingActivationClient.zip` **v2** (signed-only license file), received 2026-09-13 |
+| Package SHA-256 | `B576F4EAF12D986AC49531927C34406400921AF00FE1CE8A6DE3A3775F157227` (246,544 bytes) |
+| Superseded package v1 | SHA-256 `C2175E206DE433151C7453C7F0AC349AA269A1F92B0604EEDF912DF60A598AE6` (AES-encrypted license file; not used) |
+| Integrated | `src/*.cs` copied **unmodified** to `Licensing/Client/` (hashes below); compiled DLL not used (DEC-014) |
+| NuGet | `System.Management` 8.0.0 (WMI) |
+
+### Change inventory versus release 1.0.1
+
+| Change | Files |
+|---|---|
+| Added — source | `Licensing\LicenseManager.cs`, `Licensing\LicenseEvaluator.cs`, `Licensing\LicenseState.cs`, `Licensing\LicensingApi.cs`, `Licensing\Client\ApiClient.cs`, `Licensing\Client\HardwareFingerprint.cs`, `Licensing\Client\Keys.cs`, `Licensing\Client\LicenseFile.cs`, `Forms\ActivationForm.cs`, `Forms\LicenseForm.cs` |
+| Added — tests | `Tests\ServiceTrayMonitor.Tests\LicensingTests.cs` |
+| Modified | `Program.cs` (license gate), `TrayAppContext.cs` (License… menu, check-in timer, blocked exit), `ServiceTrayMonitor.csproj` (InformationalVersion, System.Management), `Setup\SetupSTM\SetupSTM.vdproj` (separate product), `README.md`, `docs\project\*` |
+| Installer output | `Setup\SetupSTM\Release\SetupSTM-Paid.msi` and `setup.exe` replace the free 1.0.1 installer files **on this branch only** (the free installer stays on `release/1.0.1`) |
+
+### 1.0.1-p file manifest (SHA-256, new or changed source and project files)
+
+| File | Bytes | SHA-256 |
+|---|---|---|
+| Program.cs | 1074 | 9CBD6F79D706756A61D73B9E9E1D7943D329877F5F06ACB93C8F35F5588EBA1D |
+| TrayAppContext.cs | 13887 | 75737E084960261AC410B24B15D0471F9D806E7BF1B107C489DF88DEA1FC8BC1 |
+| ServiceTrayMonitor.csproj | 1812 | 018E9F0ECAADC7CD3E6D50794718942EB45F9BCB2A7C022CB34538A86CEA1158 |
+| Forms\ActivationForm.cs | 10000 | B87BA10B731177F43EA61B196301EE2D3FBB633181063EC6A8C06D7C122AB8F3 |
+| Forms\LicenseForm.cs | 7292 | B14FD31FB012781DF591DA0779BDA3B0CD68C9B4FF9E865C1DA56C9CBB4549F5 |
+| Licensing\LicenseEvaluator.cs | 5415 | 9502C01AD45FEB54224747D3C4DABAC3DFC807F65F14FC50A59B9D1EE2C4AB2C |
+| Licensing\LicenseManager.cs | 16178 | 1E7D3DE5FCB8CE46EE5180356E0F6C2AD7E3E6402EFA4C825DDA54699B0CD952 |
+| Licensing\LicenseState.cs | 3832 | E8C54C10007C0340D70AB471408B169679A02F6360499B1AF4F385C2B3C13FE1 |
+| Licensing\LicensingApi.cs | 1234 | EF7B136467E39471563B67805B28FD48BE19CCC03A039AAE9ACFDBCBA5A4E13F |
+| Licensing\Client\ApiClient.cs *(vendor)* | 4111 | B379ECE57C716B4CFEF62DFF96AEA1E5193649DF84691039D928C3766BF2D798 |
+| Licensing\Client\HardwareFingerprint.cs *(vendor)* | 3645 | 0DA26F01D8A8D0818C78A35B43D6B733F22B3452AAB0F3284DD66270A091AE02 |
+| Licensing\Client\Keys.cs *(vendor)* | 1222 | 74DDE21B384A25447D74CE2764269FFCCA6483A55E241A21DBBA2E8A7E46AF92 |
+| Licensing\Client\LicenseFile.cs *(vendor)* | 3125 | 6240EC3A81B34EFB30CEB0063BC12066FB00450062E8DB162871635E39A22E18 |
+| Setup\SetupSTM\SetupSTM.vdproj | 33612 | 5555431CEE08AF2BE711355B9C30017BAE9175A0BC3CC7BC8122D82870DC52FD |
+| Tests\ServiceTrayMonitor.Tests\LicensingTests.cs | 19584 | 7DDAB15D9C2010A41C44828DC174319F50F6712F7E1D74234ABDE3F80D371A97 |
+
+### 1.0.1-p installer artefacts
+
+Built 2026-09-13 18:38 with Visual Studio 18 (`devenv ServiceTrayMonitor.sln /Build "Release|Any CPU" /Project SetupSTM /ProjectConfig Release`).
+
+| File | Bytes | SHA-256 |
+|---|---|---|
+| Setup\SetupSTM\Release\SetupSTM-Paid.msi | 1532416 | 61DEDF1BF8BC7FD1A0C3FAA5BDF2684B50F9EF404CE37CA79E8EF08C4C70A7A6 |
+| Setup\SetupSTM\Release\setup.exe | 683520 | 5071F857509BF471DE6C175512BD7C9B7C71944D35BC8B32691F7BD3DBBE050A |
+
+| Check | Result |
+|---|---|
+| ProductName / ProductVersion | "SystemTrayMonitor (Paid Test)" / 1.0.1 ✔ |
+| ProductCode / UpgradeCode | {B7E14C92-3A58-4D6F-9E21-C0A5F8D3B147} / {8D3F2A6B-5C71-4E09-A2B8-6F4D9C1E7A35} ✔ separate from the free product |
+| Upgrade table | Removes older "Paid Test" versions only; detects newer ones ✔ |
+| WMI dependency | `System.Management.dll` 72,968 bytes in the install folder **and** the Windows implementation (311,984 bytes) in `runtimes\win\lib\net8.0` ✔ (same layout as `System.ServiceProcess.ServiceController`) |
+| Packaged files | `ServiceTrayMonitor.exe`, `.dll`, `.pdb`, `.deps.json`, `.runtimeconfig.json`, both `System.Management.dll`, both `System.ServiceProcess.ServiceController.dll`, icons, `README.md` |

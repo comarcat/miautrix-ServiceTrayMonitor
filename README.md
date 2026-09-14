@@ -22,6 +22,24 @@ pause, and resume them — all from the tray icon's right-click menu.
   never written to disk in plain text, and only decryptable by the same Windows user account.
 - Settings persisted to `%AppData%\ServiceTrayMonitor\config.json`
 
+## Paid edition (branch `paid`, version 1.0.1-p — test build)
+
+This branch requires a license key issued through the Miautrix Licensing service (CR-004):
+
+- On first start an **activation window** asks for the key (`XXXX-XXXXX-XXXX-XXXX-XXXX-XXXX-XX`).
+  Closing it exits the app; a key rejected by the server shows the reason and closes the app.
+- A new activation waits for approval by the licensing team. Until the license is confirmed (or while
+  the server can't be reached) the app runs and keeps checking hourly **for up to 7 days**, then closes
+  until it is activated.
+- An approved license is re-checked every 6 hours and keeps working offline for up to 7 days after the
+  last successful check.
+- Tray menu **License…** shows the status, masked key, subscription expiry, and **Activate with a
+  different key** (if the new key fails, the current license stays active).
+- State is stored per machine in `%ProgramData%\ServiceTrayMonitor\license.json`.
+- For LAN testing, set the environment variable `STM_LICENSING_API_URL` (default
+  `https://licensing-api.miautrix.tech`).
+- The installer is a separate product, "SystemTrayMonitor (Paid Test)" (`SetupSTM-Paid.msi`).
+
 ## Requirements
 
 - Windows 10 or 11

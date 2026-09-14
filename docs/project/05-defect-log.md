@@ -25,8 +25,10 @@ Verification references point to [doc 06](06-test-plan-and-report.md).
 | DEF-015 | Tray updates run on thread-pool threads instead of the UI thread | Medium | Fixed — awaiting UAT |
 | DEF-016 | Cancel keeps unsaved checks; poll interval > 300 in config crashes the window | Low | Fixed — awaiting UAT |
 | DEF-017 | Re-saving the credential without retyping the password stores an empty password | Medium | Fixed — awaiting UAT |
+| DEF-018 | *(paid 1.0.1-p)* Rejected activation shows the raw reason code "ACTIVATION_REJECTED" | Low | Closed — won't fix (wording only; client decision 2026-09-14) |
+| DEF-019 | *(paid 1.0.1-p)* A server error (HTTP 500) is reported as "Couldn't reach the licensing server" | Low | Closed — won't fix (wording only; client decision 2026-09-14) |
 
-**Totals:** 17 defects — High 5, Medium 8, Low 4. All fixed in 1.0.1; none closed until UAT is accepted.
+**Totals:** 19 defects — High 5, Medium 8, Low 6. DEF-001…DEF-017 fixed in 1.0.1 and not closed until UAT is accepted. DEF-018…DEF-019 (found in CR-004 live testing) closed without a fix by client decision (DEC-020): the messages are only worded imperfectly, and the licensing behaviour is correct.
 
 ---
 
@@ -189,3 +191,24 @@ Verification references point to [doc 06](06-test-plan-and-report.md).
 - **Resolution:** A blank password with an unchanged login keeps the saved password (placeholder text
   explains this). A different login requires a password.
 - **Verification:** UAT-08.
+
+### DEF-018 — Rejected activation shows the raw reason code (paid edition)
+- **Severity / priority:** Low / P3 — correct behaviour, unclear message. **Detected:** 2026-09-14, live test IT-04.
+- **Component:** `Licensing/LicenseManager.cs` (`DescribeResult`).
+- **Steps:** Activate a key → admin rejects the activation → check in.
+- **Expected:** "The activation was rejected by the licensing team." **Actual:** "The license is locked (ACTIVATION_REJECTED)." The app blocks and closes correctly.
+- **Root cause:** The server returns `Locked` with Reason `ACTIVATION_REJECTED`, which the integration reference doesn't list, so the generic "locked (reason)" text is used.
+- **Proposed fix:** Map `ACTIVATION_REJECTED` to the rejected-activation message, and add a unit test.
+- **Verification:** AT-08 (new test) and IT-04 re-run.
+- **Status:** Closed — won't fix (2026-09-14). The client decided the wording is acceptable; the app blocks and closes correctly (IT-04, IT-06). DEC-020.
+
+### DEF-019 — Server error reported as "Couldn't reach the licensing server" (paid edition)
+- **Severity / priority:** Low / P3 — misleading message. **Detected:** 2026-09-14, live test IT-04.
+- **Component:** `Licensing/LicenseManager.cs` (`HandleUnreachable`).
+- **Steps:** Re-activate an installation whose activation was rejected (server returns HTTP 500).
+- **Expected:** "The licensing server couldn't complete the request: …". **Actual:** "Couldn't reach the licensing server: The licensing server reported an internal error…". Handling is correct: treated as temporary, the app stays blocked.
+- **Root cause:** `ServerError` and `RateLimited` share the network-failure path and its message prefix.
+- **Proposed fix:** Use "couldn't be reached" only for network or timeout failures, and "couldn't complete the request" for `ServerError`/`RateLimited` responses. Add a unit test.
+- **Verification:** AT-08 (new test).
+- **Note (IT-05):** the server error wasn't reproduced when the request was repeated at 01:04 UTC (HTTP 200). The wording defect stands for any `ServerError`/`RateLimited` response.
+- **Status:** Closed — won't fix (2026-09-14). The client decided the wording is acceptable; the handling (temporary error, retry, stay blocked) is correct. DEC-020.

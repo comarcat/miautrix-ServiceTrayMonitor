@@ -45,11 +45,19 @@ and either fixed or accepted by the sponsor; sign-off in §7.
 | RP-01 | 1.0.0 `TestCredential` pattern: `sc.exe query state= all` with stdout redirected but unread, stderr read first | **Defect reproduced.** The stderr read didn't finish within 10 s and `sc.exe` hadn't exited. After draining stdout the process exited with code 0, having produced 94,479 characters. | Session log 2026-09-13 (DEF-004) |
 | BV-00 | 1.0.0 Debug build (before changes) | 0 errors, **1 warning** (WFAC010) | Session log 2026-09-13 |
 | BV-01 | 1.0.1 `dotnet build ServiceTrayMonitor.sln -c Release` | **Pass** — 0 errors, 0 warnings | Session log 2026-09-13 (DEF-014) |
+| BV-02 | 1.0.1-p (branch `paid`) `dotnet build ServiceTrayMonitor.sln -c Release` | **Pass** — 0 errors, 0 warnings | Session log 2026-09-13 (CR-004) |
+| IT-01 | 1.0.1-p live integration against `https://licensing-api.miautrix.tech` from the reference server. Harness drives the real `LicenseManager`, vendor fingerprint, HTTP client and signature verification; state kept in a scratch file, not ProgramData. Client test key (value not recorded). | **Pass.** `GET /health` → 200. Activate → `PendingReview`, license file signature verified, InstallGuid matched, status `pending_review`, no subscription expiry (perpetual), review deadline +15 days; decision Grace until +7 days. Check-in → `Renewed`, file re-issued (new IssuedAt), still pending, Grace unchanged. Non-existent key → `LicenseNotFound`, fatal, "This license key doesn't exist.", nothing stored. Fingerprint: real CPU ID and board serial; TPM fallback to machine name (R-14). | Session log 2026-09-13 (CR-004); activation ID `57a3959b-28a5-4f71-b2e9-6785036c8184` |
+| IT-02 | 1.0.1-p live check after the client approved activation `57a3959b…` in the admin panel. Same harness, saved state, InstallGuid and hardware as IT-01. | **Pass.** Check-in → `Renewed`, license file `approved`, signature verified, no subscription expiry; decision changed Grace → **Licensed**, 7-day window cleared, LastVerified set, verify-by +7 days. Re-activation with the same key from the same installation → `Activated` immediately, same ActivationId (no new slot), status `approved`. Automated evidence for UAT-16; the GUI steps are still to be run. | Session log 2026-09-14 00:13 UTC (CR-004) |
+| IT-03 | 1.0.1-p live check: same key from a **simulated second machine**, with a new InstallGuid, its own state file, and synthetic hardware IDs (`TEST-CPU-0002`, `TEST-MB-0002`, `TEST-TPM-0002`, `02:00:00:00:00:02`). Then a check-in with the original approved activation. | **Pass.** Second machine → `PendingReview`, **new** ActivationId `2f5316c8-4ae7-40c1-bed0-f0d6c755b1cb`, signed `pending_review` file for its own InstallGuid; decision Grace (7-day window). The license's MaxActivations limit wasn't reached. Original machine check-in → `Renewed`, still `approved`, same ActivationId `57a3959b…`; decision Licensed. A new machine gets its own activation and doesn't affect existing ones. Not tested: hardware drift on the **same** installation (R-14), which the reference says reopens review on the existing activation. | Session log 2026-09-14 00:18 UTC (CR-004). Synthetic activation `2f5316c8…` left pending in the admin panel. |
+| IT-04 | 1.0.1-p live re-test of the simulated second machine after the client **rejected** activation `2f5316c8…`: check-in with the saved activation, then the same key again from the same InstallGuid and synthetic hardware, then a check-in with the original activation. | **Pass (client), with findings.** Check-in → `Locked`, Reason `ACTIVATION_REJECTED` → decision Blocked, app would close ✔; message shows the raw reason code (DEF-018). Re-activation → HTTP 500 `ServerError`, "An unexpected error occurred." → treated as temporary, stayed Blocked ✔; message starts "Couldn't reach the licensing server" although the server answered (DEF-019). The server should return a defined code for a rejected installation (licensing-team feedback item 6). Original activation → `Renewed`, still approved, Licensed ✔. | Session log 2026-09-14 00:28 UTC (CR-004) |
+| IT-05 | Repeat of the IT-04 re-activation of the second machine, with a raw HTTP capture: same key, InstallGuid `843543a8…`, synthetic hardware and app version; body built with the vendor client's serializer; state not updated. | **Not reproduced.** HTTP/1.1 **200 OK** in 338 ms (server `Date` 2026-09-14 01:04:21 GMT, `CF-RAY a3ab7a227cc41242-ORD`). Body: `success: true`, **`code: 1`** (numeric = PendingReview), same ActivationId `2f5316c8…`, status `pending_review`, `reviewDeadlineUtc` 2026-09-29T00:53:04.846411Z. The rejected activation had been reopened for review at about 00:53:04 UTC, before this repeat. Finding: result codes are sent as numbers, not the strings shown in reference §7 (feedback item 5, R-17). | Raw log `raw-activate-20260914-010443Z.log` (session 2026-09-14) |
+| IT-06 | Check-in for the second machine after the client **rejected** activation `2f5316c8…` again. Raw HTTP capture; the captured response is replayed through `LicenseManager` so the decision matches the app exactly. No activation call. | **Pass.** HTTP/1.1 200 OK in 283 ms (server `Date` 2026-09-14 02:00:41 GMT, `CF-RAY a3abccaa1ebeaa8f-ORD`). Body: `success: true`, `code: 3` (numeric = Locked), status `locked`, reason `ACTIVATION_REJECTED`, no license file. App decision: **Blocked**, fatal — the app would show the reason and close ✔. Message still shows the raw reason code (DEF-018). Numeric result codes confirmed again (R-17). | Raw log `raw-checkin-20260914-020103Z.log` (session 2026-09-14) |
 
 ## 4. Results — automated tests
 
 Command: `dotnet test Tests/ServiceTrayMonitor.Tests -c Release`
-Summary: **Passed 38, Failed 0, Skipped 0, Total 38** (duration 88 ms).
+Summary (release 1.0.1): **Passed 38, Failed 0, Skipped 0, Total 38** (duration 88 ms).
+Summary (paid edition 1.0.1-p, branch `paid`): **Passed 66, Failed 0, Skipped 0, Total 66** (duration 286 ms) — the 38 above plus 28 licensing tests (AT-07…AT-09).
 
 | Group | Test class | Tests | Covers | Result |
 |---|---|---|---|---|
@@ -59,6 +67,9 @@ Summary: **Passed 38, Failed 0, Skipped 0, Total 38** (duration 88 ms).
 | AT-04 | `StartupManagerTests` | 2 (logon/elevated/no-limit XML; XML escaping) | DEF-003 | 2/2 pass |
 | AT-05 | `ServiceActionsTests` | 4 (access-denied detection ×2; Win32 reason in message; runner without credential) | DEF-004, DEF-005, DEF-008 | 4/4 pass |
 | AT-06 | `ServiceMonitorEngineTests` | 3 (existing vs. missing service; list copied; installed list sorted) | DEF-009 | 3/3 pass |
+| AT-07 | `LicenseKeyTests` *(paid)* | 8 (key format theory ×7 incl. lower-case and spaces; key masking) | CR-004 | 8/8 pass |
+| AT-08 | `LicenseManagerTests` *(paid)* | 17 (vendor verifier accepts test format; invalid format not sent; approved; pending → 7 days → blocked → approved; unknown key; unreachable → 7 days → blocked; retry of unsent activation; new key doesn't restart window; locked after subscription grace; tampered file; file for another install; approved offline ≤ 7 days; subscription past grace offline; clock moved back; different-key failure keeps license; check due every 6 h / hourly) | CR-004 | 17/17 pass |
+| AT-09 | `LicenseStateStoreTests` *(paid)* | 3 (missing file; round trip; corrupt file backed up) | CR-004 | 3/3 pass |
 
 ## 5. User acceptance test cases
 
@@ -80,6 +91,23 @@ Use a **test machine**. "Test service" = a non-critical service. For pause cases
 | UAT-11 | Installer upgrade | Test machine with SystemTrayMonitor 1.0.0 installed | 1. Run the 1.0.1 `setup.exe`. 2. Open Apps & Features. 3. Launch the app. | No .NET Framework 4.7.2 prompt. A single "SystemTrayMonitor" entry, version 1.0.1. The app starts, and the existing config and credential are kept. | DEF-013 | Not run |
 | UAT-12 | Long run and exit | Monitor 10 services; poll 2 s | 1. Leave running 8 h, opening the tray menu and the windows periodically. 2. Exit from the tray. | Handle and memory counts (Task Manager: GDI/USER objects) stay flat. No error dialogs. Exit removes the icon and ends the process. | DEF-009, DEF-011, DEF-015 | Not run |
 
+### 5.1 Paid edition (branch `paid`, 1.0.1-p) — CR-004
+
+Preconditions for all: `SetupSTM-Paid.msi` installed on a test machine **without** the free edition (R-15), internet access to
+`licensing-api.miautrix.tech` unless stated, and test keys issued by the client from the licensing admin panel.
+
+| ID | Title | Preconditions | Steps | Expected result | Covers | Result |
+|---|---|---|---|---|---|---|
+| UAT-13 | First start without activation | Fresh install; no `license.json` | 1. Start the app. 2. Close the activation window (X or Exit). | The activation window appears before any tray icon; closing it exits the process. | CR-004 | Not run |
+| UAT-14 | Malformed and rejected keys | As UAT-13 | 1. Type `ABCD-1234`. 2. Type a well-formed key that doesn't exist and click Activate. | Step 1: Activate stays disabled. Step 2: warning "This license key doesn't exist." then the app closes; `license.json` holds no key. | CR-004 | Not run |
+| UAT-15 | New activation (pending review) | Valid unused test key | Activate with the key | Message says the license is waiting for approval and shows a date 7 days ahead; the tray starts; **License…** shows the masked key, pending status, and confirm-by date. The admin panel shows the activation with this machine's real CPU ID (not `CPU-UNAVAILABLE`). | CR-004 | Not run |
+| UAT-16 | Approval picked up | After UAT-15 | 1. Approve the activation in the admin panel. 2. **License… → Check now** (or wait up to 1 h). | Status "Activated"; Last verified = now; Confirm by = +7 days; subscription expiry or "None (perpetual)". | CR-004 | Not run |
+| UAT-17 | Offline behaviour | Approved | 1. Disconnect the network; restart the app. 2. Set the test machine clock 8 days ahead. | Step 1: app runs; License… shows the connection error. Step 2: within 5 minutes a warning says the license couldn't be verified for more than 7 days and the app closes; setting the clock back doesn't reopen it. | CR-004 | Not run |
+| UAT-18 | Revoked license | Approved | 1. Revoke the license in the admin panel. 2. **Check now** (or restart). 3. Start again. | Step 2: warning "This license has been revoked." and the app closes. Step 3: automatic re-check, then the activation window with the reason. | CR-004 | Not run |
+| UAT-19 | Fingerprint stability | Approved, on a machine with Hyper-V/VPN adapters or without a readable TPM | Reboot 3 times; connect/disconnect VPN; **Check now** each time | Status stays "Activated" (no return to pending review). A failure confirms R-14. | CR-004, R-14 | Not run |
+| UAT-20 | Activate with a different key | Approved | 1. **License… → Activate with a different key** → nonexistent key. 2. Repeat with a second valid key. | Step 1: warning, "Your current license stays active"; app keeps running. Step 2: License… shows the new masked key and its status. | CR-004, DEC-016 | Not run |
+| UAT-21 | Paid installer | Clean test machine | Install `setup.exe` / `SetupSTM-Paid.msi`; open Apps & Features; open License… | Entry "SystemTrayMonitor (Paid Test)" 1.0.1; License… shows "Service Tray Monitor 1.0.1-p"; UAT-15 CPU ID check passes (WMI dependency shipped correctly). | CR-004, DEC-018 | Not run |
+
 ## 6. Requirements traceability matrix
 
 | Req. | Requirement | Source | Defects / CRs | Automated tests | UAT |
@@ -95,7 +123,12 @@ Use a **test machine**. "Test service" = a non-critical service. For pause cases
 | REQ-09 | Settings persist safely in `%AppData%` | README | DEF-001, DEF-010 | AT-03 | UAT-10 |
 | REQ-10 | Installable and upgradable via MSI | Installer project | DEF-013; CR-002, CR-003 | — | UAT-11 |
 | REQ-11 | Stable long-running tray process | Implied | DEF-009, DEF-011, DEF-015 | AT-06 | UAT-12 |
-| REQ-12 | Clean build | Quality | DEF-014 | BV-01 | — |
+| REQ-12 | Clean build | Quality | DEF-014 | BV-01, BV-02 | — |
+| REQ-13 | *(paid)* App runs only with an activated license; activation window at startup | CR-004 | CR-004 | AT-07, AT-08 | UAT-13, UAT-14 |
+| REQ-14 | *(paid)* 7-day rule for unconfirmed or unverified licenses | CR-004, DEC-015 | CR-004 | AT-08 | UAT-15, UAT-16, UAT-17 |
+| REQ-15 | *(paid)* Rejected, revoked, or locked license shows the reason and closes the app | CR-004, DEC-016 | CR-004 | AT-08 | UAT-14, UAT-18 |
+| REQ-16 | *(paid)* License window: status, masked key, expiry, activate a different key | CR-004 | CR-004 | AT-07, AT-08 | UAT-15, UAT-20 |
+| REQ-17 | *(paid)* License state per machine; separate installer product | CR-004, DEC-017, DEC-018 | CR-004; R-14, R-15 | AT-09 | UAT-19, UAT-21 |
 
 ## 7. Sign-off
 

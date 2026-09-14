@@ -56,7 +56,8 @@ signing (CR-003), and deployment to production. All are handled through change c
 | M4 Baseline and 1.0.1 committed to GitHub | [TBD] | Pending — client action |
 | M5 User acceptance testing (UAT-01…UAT-12) | [TBD] | Not started |
 | M6 Release 1.0.1 approved | [TBD] | Not started |
-| M7 Feature planning (change requests) | After M3 | Pending — agreed to start after fixes |
+| M7 Feature planning (change requests) | After M3 | In progress — CR-004 approved |
+| M8 Paid edition test build 1.0.1-p (CR-004) | 2026-09-13 | Implemented on branch `paid` — UAT pending |
 
 ## 6. Stakeholder register
 

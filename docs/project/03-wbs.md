@@ -60,3 +60,13 @@ Status as of 2026-09-13.
 
 Change requests (CR-001…) are outside this WBS baseline. Once approved, each CR adds its own work
 packages under a new element `1.6 Approved changes`.
+
+## 1.6 Approved changes
+
+| WBS | Work package | Description / output | Owner | Acceptance | Status |
+|---|---|---|---|---|---|
+| 1.6.1 | CR-004 Paid edition test build (1.0.1-p) | Branch `paid`: licensing module, activation and License windows, startup gate, tests AT-07…AT-09, separate MSI, docs | Dev team | UAT-13…UAT-21 pass; sponsor sign-off | Implemented — UAT pending |
+| 1.6.1.1 | Package review and questions | Client package v1/v2 analysed; questions answered 2026-09-13; feedback list in CR-004 record | Dev team | Client answers recorded (DEC-014…DEC-019) | Complete |
+| 1.6.1.2 | Implementation | `Licensing/`, `Forms/ActivationForm`, `Forms/LicenseForm`, `Program`, `TrayAppContext` | Dev team | BV-02; AT-07…AT-09 pass | Complete |
+| 1.6.1.3 | Paid installer | `SetupSTM-Paid.msi` "SystemTrayMonitor (Paid Test)" | Dev team | Doc 10 package check; UAT-21 | Built — UAT pending |
+| 1.6.1.4 | Live licensing test | Activation against the licensing API with a client test key | Client + dev team | UAT-15…UAT-20 | Live activation, approval and re-activation verified (IT-01, IT-02); GUI UAT pending |
