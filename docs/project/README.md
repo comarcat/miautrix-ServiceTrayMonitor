@@ -31,6 +31,18 @@ the project document, always issued as DOCX (DEC-012): `ServiceTrayMonitor-Proje
    its name and location must not change.
 5. PMI guidelines apply to planning, control, and closure artifacts.
 
+## Branches (GitHub `comarcat/miautrix-ServiceTrayMonitor`)
+
+| Branch | Role | Content | Merge policy |
+|---|---|---|---|
+| `main` | Default branch | Initial commit (v1.0.0 as found) | Receives `release/1.0.1` by pull request after UAT sign-off (proposed) |
+| `release/1.0.1` | **Primary** release line | 1.0.1 defect-fix release (DEF-001…DEF-017), automated tests, PMI documentation, knowledge base | Pull request into `main` after UAT |
+| `paid` | **Secondary** branch (test build) | Created from `release/1.0.1`; paid edition 1.0.1-p with license key activation (CR-004): `Licensing/`, `Forms/ActivationForm`, `Forms/LicenseForm`, licensing tests, `SetupSTM-Paid.msi` | **Not merged** into `main` (DEC-019, DEC-020) |
+
+The knowledge base in `graphify-out/` is versioned with each branch and describes that branch's code and documents.
+On `paid` it also contains the branch nodes "Branch release/1.0.1 (primary)" and "Branch paid (secondary)", which mark
+the components that exist only on the paid edition.
+
 ## Conventions
 
 | Prefix | Meaning | Status values |

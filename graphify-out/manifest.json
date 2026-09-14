@@ -30,16 +30,16 @@
     "semantic_hash": "67a293ed98d51f58fde5ae99759f476e"
   },
   "Program.cs": {
-    "mtime": 1784155814.1494083,
-    "seen": 1789315267.9783394,
-    "ast_hash": "92831988b73f967883c0e72f59fdc496",
-    "semantic_hash": "92831988b73f967883c0e72f59fdc496"
+    "mtime": 1789342383.0141463,
+    "seen": 1789352590.4911973,
+    "ast_hash": "46ae3354901b2e35fe1fa28d001404ef",
+    "semantic_hash": "46ae3354901b2e35fe1fa28d001404ef"
   },
   "ServiceTrayMonitor.csproj": {
-    "mtime": 1789316505.5184364,
-    "seen": 1789328857.7822876,
-    "ast_hash": "c2eb3b1791d57d562a2640ad251756e7",
-    "semantic_hash": "c2eb3b1791d57d562a2640ad251756e7"
+    "mtime": 1789342584.5213158,
+    "seen": 1789352590.4911988,
+    "ast_hash": "711694d3e2fbba3c4bb9a50552b32ebc",
+    "semantic_hash": "711694d3e2fbba3c4bb9a50552b32ebc"
   },
   "ServiceTrayMonitor.sln": {
     "mtime": 1789316604.5283666,
@@ -72,16 +72,16 @@
     "semantic_hash": "187b87277daba92eeaf8227ee094921e"
   },
   "TrayAppContext.cs": {
-    "mtime": 1789316404.768688,
-    "seen": 1789328857.7823026,
-    "ast_hash": "0e322a3b3d16f0a4ad9223ac53a12fcd",
-    "semantic_hash": "0e322a3b3d16f0a4ad9223ac53a12fcd"
+    "mtime": 1789342405.3992205,
+    "seen": 1789352590.4912171,
+    "ast_hash": "db7cfbac6a5449802e71e9c7c679105c",
+    "semantic_hash": "db7cfbac6a5449802e71e9c7c679105c"
   },
   "README.md": {
-    "mtime": 1789316619.449521,
-    "seen": 1789328857.782304,
-    "ast_hash": "a7247b5f681989e22d090a6f5d321080",
-    "semantic_hash": "a7247b5f681989e22d090a6f5d321080"
+    "mtime": 1789342847.0792875,
+    "seen": 1789352590.491218,
+    "ast_hash": "bee63cc7380f1cdd4d8064841695c02d",
+    "semantic_hash": "bee63cc7380f1cdd4d8064841695c02d"
   },
   "Models/ServiceSelection.cs": {
     "mtime": 1789316270.7610216,
@@ -138,10 +138,10 @@
     "semantic_hash": "96bb7e6c2a1d3bee2eda1893980acd07"
   },
   "docs/project/01-project-charter.md": {
-    "mtime": 1789316801.1245503,
-    "seen": 1789328857.782305,
-    "ast_hash": "8e7094cb3b662841fa498a020399eeac",
-    "semantic_hash": "8e7094cb3b662841fa498a020399eeac"
+    "mtime": 1789342834.4062204,
+    "seen": 1789352590.4912195,
+    "ast_hash": "01d9adf966cab1e06a9a88dd219a1a14",
+    "semantic_hash": "01d9adf966cab1e06a9a88dd219a1a14"
   },
   "docs/project/02-statement-of-work.md": {
     "mtime": 1789317133.5729775,
@@ -150,63 +150,129 @@
     "semantic_hash": "33bf1d91b60507cacae8ed6c899d918e"
   },
   "docs/project/03-wbs.md": {
-    "mtime": 1789328341.4488995,
-    "seen": 1789328857.7823071,
-    "ast_hash": "d25346e1d3f4dc5d462414665ba9de8f",
-    "semantic_hash": "d25346e1d3f4dc5d462414665ba9de8f"
+    "mtime": 1789344815.9593291,
+    "seen": 1789352590.4912205,
+    "ast_hash": "143065141ee7b46a5b1958a52cda9c9c",
+    "semantic_hash": "143065141ee7b46a5b1958a52cda9c9c"
   },
   "docs/project/04-software-description.md": {
-    "mtime": 1789316887.7566504,
-    "seen": 1789328857.782308,
-    "ast_hash": "1dbd09d230dfbbc3b799fee146bf8624",
-    "semantic_hash": "1dbd09d230dfbbc3b799fee146bf8624"
+    "mtime": 1789342792.5291488,
+    "seen": 1789352590.4912217,
+    "ast_hash": "0130990930d61cae63bb8481b79aa822",
+    "semantic_hash": "0130990930d61cae63bb8481b79aa822"
   },
   "docs/project/05-defect-log.md": {
-    "mtime": 1789317132.0613852,
-    "seen": 1789328857.782309,
-    "ast_hash": "1c9efeffb2a9176470500ff6e76cd898",
-    "semantic_hash": "1c9efeffb2a9176470500ff6e76cd898"
+    "mtime": 1789351504.0156634,
+    "seen": 1789352590.4912229,
+    "ast_hash": "940c538155cc4a08f8fd924887b818b7",
+    "semantic_hash": "940c538155cc4a08f8fd924887b818b7"
   },
   "docs/project/06-test-plan-and-report.md": {
-    "mtime": 1789317107.179489,
-    "seen": 1789328857.7823098,
-    "ast_hash": "e8c175355dec566c4ac681a3e2160b69",
-    "semantic_hash": "e8c175355dec566c4ac681a3e2160b69"
+    "mtime": 1789351278.5146544,
+    "seen": 1789352590.4912238,
+    "ast_hash": "ddc931936212917070bd9a8261830798",
+    "semantic_hash": "ddc931936212917070bd9a8261830798"
   },
   "docs/project/07-change-request-log.md": {
-    "mtime": 1789316962.755983,
-    "seen": 1789328857.782311,
-    "ast_hash": "d2be00c23a7e1eb3c1c1ed5de25db6f7",
-    "semantic_hash": "d2be00c23a7e1eb3c1c1ed5de25db6f7"
+    "mtime": 1789347943.7704096,
+    "seen": 1789352590.4912248,
+    "ast_hash": "71d0e3413745653493a99ad52ecbc189",
+    "semantic_hash": "71d0e3413745653493a99ad52ecbc189"
   },
   "docs/project/08-risk-register.md": {
-    "mtime": 1789316981.6864452,
-    "seen": 1789328857.782312,
-    "ast_hash": "be47ad935cc66b9007b3fffebd502b6f",
-    "semantic_hash": "be47ad935cc66b9007b3fffebd502b6f"
+    "mtime": 1789347950.5880187,
+    "seen": 1789352590.491226,
+    "ast_hash": "c7cb0785016c823686883365c99f2e83",
+    "semantic_hash": "c7cb0785016c823686883365c99f2e83"
   },
   "docs/project/09-decision-log.md": {
-    "mtime": 1789328345.5824597,
-    "seen": 1789328857.7823129,
-    "ast_hash": "c47990e0d7580de15e2504b697583fcf",
-    "semantic_hash": "c47990e0d7580de15e2504b697583fcf"
+    "mtime": 1789351506.9661343,
+    "seen": 1789352590.4912271,
+    "ast_hash": "5901aa267ba56a5c4184d2859696da07",
+    "semantic_hash": "5901aa267ba56a5c4184d2859696da07"
   },
   "docs/project/10-configuration-baseline.md": {
-    "mtime": 1789317267.937012,
-    "seen": 1789328857.782314,
-    "ast_hash": "f57b6b93091fd05ba9f6ed36ed45fbf3",
-    "semantic_hash": "f57b6b93091fd05ba9f6ed36ed45fbf3"
+    "mtime": 1789342999.5620475,
+    "seen": 1789352590.491228,
+    "ast_hash": "df7d5fa00ce6f5ba38d7e5142f2509b0",
+    "semantic_hash": "df7d5fa00ce6f5ba38d7e5142f2509b0"
   },
   "docs/project/11-lessons-learned.md": {
-    "mtime": 1789317015.5904303,
-    "seen": 1789328857.782315,
-    "ast_hash": "e44d29ce062339e7139e18cee2ff312d",
-    "semantic_hash": "e44d29ce062339e7139e18cee2ff312d"
+    "mtime": 1789342840.4373324,
+    "seen": 1789352590.4912293,
+    "ast_hash": "7aac58349d7936d0f847243ad032fd79",
+    "semantic_hash": "7aac58349d7936d0f847243ad032fd79"
   },
   "docs/project/README.md": {
-    "mtime": 1789328348.395831,
-    "seen": 1789328857.7823157,
-    "ast_hash": "0ed97744df575e78ebdb609e377137e3",
-    "semantic_hash": "0ed97744df575e78ebdb609e377137e3"
+    "mtime": 1789351801.819615,
+    "seen": 1789352590.4912302,
+    "ast_hash": "70231ec90b244304c900d7bff43be613",
+    "semantic_hash": "70231ec90b244304c900d7bff43be613"
+  },
+  "Forms/ActivationForm.cs": {
+    "mtime": 1789342355.01132,
+    "seen": 1789352590.4911675,
+    "ast_hash": "93553fad2693da198ac05a73d3dc392d",
+    "semantic_hash": "93553fad2693da198ac05a73d3dc392d"
+  },
+  "Forms/LicenseForm.cs": {
+    "mtime": 1789342379.1384985,
+    "seen": 1789352590.491176,
+    "ast_hash": "e78693d79b3c2cd70ef4619695f9c779",
+    "semantic_hash": "e78693d79b3c2cd70ef4619695f9c779"
+  },
+  "Licensing/Client/ApiClient.cs": {
+    "mtime": 1789339590.0,
+    "seen": 1789352590.4911819,
+    "ast_hash": "2f78a79d36fbc22f973e76b93dea87ea",
+    "semantic_hash": "2f78a79d36fbc22f973e76b93dea87ea"
+  },
+  "Licensing/Client/HardwareFingerprint.cs": {
+    "mtime": 1789339590.0,
+    "seen": 1789352590.491183,
+    "ast_hash": "c657f393a0f220a947f3a309c351fb1c",
+    "semantic_hash": "c657f393a0f220a947f3a309c351fb1c"
+  },
+  "Licensing/Client/Keys.cs": {
+    "mtime": 1789339590.0,
+    "seen": 1789352590.4911842,
+    "ast_hash": "c7679cd7c5f637dd93b7c167b556076c",
+    "semantic_hash": "c7679cd7c5f637dd93b7c167b556076c"
+  },
+  "Licensing/Client/LicenseFile.cs": {
+    "mtime": 1789339590.0,
+    "seen": 1789352590.4911852,
+    "ast_hash": "fd752acda9418163369a2980852db8b9",
+    "semantic_hash": "fd752acda9418163369a2980852db8b9"
+  },
+  "Licensing/LicenseEvaluator.cs": {
+    "mtime": 1789342269.5077786,
+    "seen": 1789352590.4911861,
+    "ast_hash": "12db797ad45b76066347b2b774ddb88e",
+    "semantic_hash": "12db797ad45b76066347b2b774ddb88e"
+  },
+  "Licensing/LicenseManager.cs": {
+    "mtime": 1789342322.7054312,
+    "seen": 1789352590.491187,
+    "ast_hash": "fdc68568b0c809b54f5fccc1c91508a2",
+    "semantic_hash": "fdc68568b0c809b54f5fccc1c91508a2"
+  },
+  "Licensing/LicenseState.cs": {
+    "mtime": 1789342250.781451,
+    "seen": 1789352590.4911895,
+    "ast_hash": "c414c857b81ca9d92e9ac7c5a731f694",
+    "semantic_hash": "c414c857b81ca9d92e9ac7c5a731f694"
+  },
+  "Licensing/LicensingApi.cs": {
+    "mtime": 1789342274.6961322,
+    "seen": 1789352590.4911904,
+    "ast_hash": "ff2fe830813d87052c003bcdd14bf8c0",
+    "semantic_hash": "ff2fe830813d87052c003bcdd14bf8c0"
+  },
+  "Tests/ServiceTrayMonitor.Tests/LicensingTests.cs": {
+    "mtime": 1789342567.9684174,
+    "seen": 1789352590.4912105,
+    "ast_hash": "0021befe9ca30b575a087dea31c2661f",
+    "semantic_hash": "0021befe9ca30b575a087dea31c2661f"
   }
 }
